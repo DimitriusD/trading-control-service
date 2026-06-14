@@ -165,10 +165,54 @@ To see the exact artifact path for the current version:
 ./gradlew printOpenApiContractArtifactPath
 ```
 
+## Consuming the market-data-service contract
+
+The `infrastructure/market-data-client` module consumes the **published** `market-data-service`
+OpenAPI contract JAR from GitHub Packages and generates a Java REST client at build time.
+
+- The contract is **not** added via `implementation`. It is resolved through a dedicated, resolvable
+  `openapi` configuration:
+  ```kotlin
+  openapi("com.trading.contracts:market-data-service-openapi:0.1.0-SNAPSHOT")
+  ```
+- `extractMarketDataOpenApiContract` unpacks `openapi/openapi.yaml` (+ `openapi/schemas/**`) out of
+  the JAR, then `openApiGenerate` produces the client into `build/generated/market-data-client`
+  (git-ignored — generated sources are never committed). `compileJava` depends on generation.
+- Generated transport classes live under `com.trading.mds.client.*` and are confined to this module.
+  The application layer depends only on the `MarketDataStreamControlPort` output port; the
+  `MarketDataStreamControlAdapter` infrastructure adapter calls the generated `StreamsApi`.
+
+### GitHub Packages credentials (local)
+
+Add a **read:packages** Personal Access Token to `~/.gradle/gradle.properties` (never commit it):
+
+```properties
+gpr.user=DimitriusD
+gpr.key=<PAT_CLASSIC_WITH_READ_PACKAGES>
+```
+
+CI may instead supply `GITHUB_ACTOR`/`GITHUB_USERNAME` and `GITHUB_TOKEN` env vars.
+
+### Useful commands
+
+```bash
+# Generate the client only
+./gradlew :infrastructure:market-data-client:openApiGenerate
+
+# Full build (runs generation as part of compileJava)
+./gradlew build
+```
+
+### Updating the contract version
+
+Bump the version in the `openapi(...)` dependency in
+`infrastructure/market-data-client/build.gradle.kts` once a new contract is published.
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `MARKET_DATA_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL of the remote market-data-service |
 | `APP_DB_URL` | `jdbc:postgresql://localhost:5432/appdb` | Database URL |
 | `APP_DB_USERNAME` | `appuser` | Database username |
 | `APP_DB_PASSWORD` | `apppass` | Database password |

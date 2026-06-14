@@ -35,6 +35,7 @@ jakartaServletApi = { module = "jakarta.servlet:jakarta.servlet-api", version.re
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstructProcessor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jacksonJsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
 
 [plugins]
 springBoot = { id = "org.springframework.boot", version.ref = "springBoot" }

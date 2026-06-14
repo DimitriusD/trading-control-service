@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(project(":application"))
     implementation(project(":infrastructure:rest-api"))
+    implementation(project(":infrastructure:market-data-client"))
     implementation(libs.springBootStarterWeb)
     implementation(libs.springBootStarterActuator)
     implementation(libs.springBootStarterValidation)

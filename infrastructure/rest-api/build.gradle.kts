@@ -26,9 +26,13 @@ dependencies {
 
 val openApiGeneratedDir = layout.buildDirectory.dir("generated/openapi")
 
+val openApiContractDir = project(":infrastructure:rest-api:trading-control-service-open-api")
+    .projectDir
+    .resolve("src/main/resources/openapi")
+
 tasks.named<GenerateTask>("openApiGenerate") {
     generatorName.set("spring")
-    inputSpec.set("$projectDir/src/main/resources/openapi/openapi.yaml")
+    inputSpec.set(openApiContractDir.resolve("openapi.yaml").absolutePath)
     outputDir.set(openApiGeneratedDir.get().asFile.absolutePath)
     apiPackage.set("com.trading.control.restapi.generated.api")
     modelPackage.set("com.trading.control.restapi.generated.model")
