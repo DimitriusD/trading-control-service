@@ -1,8 +1,9 @@
 package com.trading.control.marketdata;
 
+import com.trading.control.application.domain.model.CreateStreamCommand;
+import com.trading.control.application.domain.model.stream.ConfiguredStream;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 import com.trading.mds.client.api.StreamsApi;
-import com.trading.mds.client.model.StreamResponseDto;
 import com.trading.mds.client.model.UpdateStreamEnabledRequestDto;
 import org.springframework.stereotype.Component;
 
@@ -18,15 +19,21 @@ public class MarketDataStreamControlAdapter implements MarketDataStreamControlPo
     }
 
     @Override
-    public List<RemoteStream> listStreams() {
-        List<StreamResponseDto> streams = streamsApi.listStreams();
-        return streams.stream()
-                .map(dto -> new RemoteStream(dto.getStreamId(), Boolean.TRUE.equals(dto.getEnabled())))
+    public List<ConfiguredStream> listStreams() {
+        return streamsApi.listStreams().stream()
+                .map(MarketDataStreamMapper::toConfiguredStream)
                 .toList();
     }
 
     @Override
-    public void setStreamEnabled(String streamId, boolean enabled) {
-        streamsApi.updateStreamEnabled(streamId, new UpdateStreamEnabledRequestDto().enabled(enabled));
+    public ConfiguredStream createStream(CreateStreamCommand command) {
+        var response = streamsApi.createStream(MarketDataStreamMapper.toCreateRequest(command));
+        return MarketDataStreamMapper.toConfiguredStream(response);
+    }
+
+    @Override
+    public ConfiguredStream setStreamEnabled(String streamId, boolean enabled) {
+        var response = streamsApi.updateStreamEnabled(streamId, new UpdateStreamEnabledRequestDto().enabled(enabled));
+        return MarketDataStreamMapper.toConfiguredStream(response);
     }
 }
