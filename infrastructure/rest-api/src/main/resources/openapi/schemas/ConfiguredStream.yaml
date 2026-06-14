@@ -1,0 +1,62 @@
+type: object
+required:
+  - id
+  - instrumentId
+  - instrumentKey
+  - pair
+  - symbol
+  - exchange
+  - market
+  - baseAsset
+  - quoteAsset
+  - channels
+  - desired
+  - runtime
+  - health
+  - autoRestart
+properties:
+  id:
+    type: string
+  instrumentId:
+    type: string
+  instrumentKey:
+    type: string
+  pair:
+    type: string
+  symbol:
+    type: string
+  exchange:
+    type: string
+  market:
+    type: string
+  baseAsset:
+    type: string
+  quoteAsset:
+    type: string
+  channels:
+    type: array
+    items:
+      $ref: "./StreamChannelConfig.yaml"
+  desired:
+    type: string
+    enum:
+      - ENABLED
+      - DISABLED
+  runtime:
+    type: string
+    enum:
+      - RUNNING
+      - STARTING
+      - STOPPING
+      - STOPPED
+      - FAILED
+      - RECOVERING
+  health:
+    type: string
+    enum:
+      - HEALTHY
+      - WARMING_UP
+      - DEGRADED
+      - UNKNOWN
+  autoRestart:
+    type: boolean

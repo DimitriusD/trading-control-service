@@ -1,37 +1,52 @@
 openapi: 3.0.3
 info:
-  title: Service API
+  title: Trading Control Service API
   version: 1.0.0
 
 paths:
-  /api/v1/items:
-    post:
-      summary: Create item
-      operationId: createItem
+  /api/v1/markets:
+    get:
+      summary: Get supported markets and stream channel capabilities
+      operationId: getMarkets
       tags:
-        - items
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "./schemas/CreateItemRequest.yaml"
+        - markets
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           content:
             application/json:
               schema:
-                $ref: "./schemas/ItemResponse.yaml"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "409":
-          $ref: "#/components/responses/Conflict"
+                $ref: "./schemas/MarketCatalogResponse.yaml"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/markets/{exchange}/{marketType}/instruments:
+    parameters:
+      - $ref: "#/components/parameters/Exchange"
+      - $ref: "#/components/parameters/MarketType"
     get:
-      summary: List items
-      operationId: listItems
+      summary: Get instruments for a given exchange and market type
+      operationId: getMarketInstruments
       tags:
-        - items
+        - markets
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/MarketInstrumentsResponse.yaml"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/streams:
+    get:
+      summary: Get configured streams
+      operationId: getConfiguredStreams
+      tags:
+        - streams
       responses:
         "200":
           description: OK
@@ -40,72 +55,112 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "./schemas/ItemResponse.yaml"
-
-  /api/v1/items/{itemId}:
-    parameters:
-      - $ref: "#/components/parameters/ItemId"
-    get:
-      summary: Get item
-      operationId: getItem
+                  $ref: "./schemas/ConfiguredStream.yaml"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Create a stream configuration
+      operationId: createStream
       tags:
-        - items
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "./schemas/ItemResponse.yaml"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    delete:
-      summary: Delete item
-      operationId: deleteItem
-      tags:
-        - items
-      responses:
-        "204":
-          description: Deleted
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/v1/items/{itemId}/enabled:
-    parameters:
-      - $ref: "#/components/parameters/ItemId"
-    put:
-      summary: Set item enabled state
-      operationId: setItemEnabled
-      tags:
-        - items
+        - streams
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "./schemas/SetEnabledRequest.yaml"
+              $ref: "./schemas/CreateStreamRequest.yaml"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/ConfiguredStream.yaml"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/streams/{streamId}:
+    parameters:
+      - $ref: "#/components/parameters/StreamId"
+    delete:
+      summary: Delete a configured stream
+      operationId: deleteStream
+      tags:
+        - streams
+      responses:
+        "204":
+          description: No Content
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/streams/{streamId}/start:
+    parameters:
+      - $ref: "#/components/parameters/StreamId"
+    post:
+      summary: Start a configured stream
+      operationId: startStream
+      tags:
+        - streams
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "./schemas/ItemResponse.yaml"
+                $ref: "./schemas/ConfiguredStream.yaml"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/streams/{streamId}/stop:
+    parameters:
+      - $ref: "#/components/parameters/StreamId"
+    post:
+      summary: Stop a configured stream
+      operationId: stopStream
+      tags:
+        - streams
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/ConfiguredStream.yaml"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
 components:
   parameters:
-    ItemId:
-      name: itemId
+    Exchange:
+      name: exchange
+      in: path
+      required: true
+      schema:
+        type: string
+    MarketType:
+      name: marketType
+      in: path
+      required: true
+      schema:
+        type: string
+    StreamId:
+      name: streamId
       in: path
       required: true
       schema:
         type: string
 
   responses:
-    ValidationError:
-      description: Validation error
+    BadRequest:
+      description: Bad request
       content:
         application/json:
           schema:
@@ -116,8 +171,8 @@ components:
         application/json:
           schema:
             $ref: "./schemas/ErrorResponse.yaml"
-    Conflict:
-      description: Conflict
+    InternalError:
+      description: Internal server error
       content:
         application/json:
           schema:

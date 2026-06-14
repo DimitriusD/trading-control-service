@@ -3,11 +3,10 @@ plugins {
 }
 
 dependencies {
-    api(libs.slf4jApi)
+    implementation(platform(libs.springBom))
+    implementation(project(":application"))
 
     compileOnly(libs.lombok)
 
     annotationProcessor(libs.lombok)
-
-    testImplementation(libs.junitJupiter)
 }

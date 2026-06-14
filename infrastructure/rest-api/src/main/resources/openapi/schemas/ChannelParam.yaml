@@ -1,0 +1,26 @@
+type: object
+required:
+  - name
+  - displayName
+  - type
+  - required
+properties:
+  name:
+    type: string
+  displayName:
+    type: string
+  type:
+    type: string
+    enum:
+      - SELECT
+      - TEXT
+      - NUMBER
+      - BOOLEAN
+  required:
+    type: boolean
+  defaultValue:
+    type: string
+  allowedValues:
+    type: array
+    items:
+      $ref: "./ChannelParamValue.yaml"

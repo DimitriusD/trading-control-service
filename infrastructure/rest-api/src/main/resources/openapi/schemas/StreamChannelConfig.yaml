@@ -1,0 +1,14 @@
+type: object
+required:
+  - type
+  - params
+properties:
+  type:
+    type: string
+    enum:
+      - TRADE
+      - DEPTH_DIFF
+  params:
+    type: object
+    additionalProperties:
+      type: string

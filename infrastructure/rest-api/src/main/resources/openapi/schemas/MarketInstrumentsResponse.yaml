@@ -1,0 +1,14 @@
+type: object
+required:
+  - exchange
+  - marketType
+  - instruments
+properties:
+  exchange:
+    type: string
+  marketType:
+    type: string
+  instruments:
+    type: array
+    items:
+      $ref: "./InstrumentOption.yaml"

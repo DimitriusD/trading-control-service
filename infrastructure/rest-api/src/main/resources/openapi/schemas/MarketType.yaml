@@ -1,0 +1,17 @@
+type: object
+required:
+  - code
+  - displayName
+  - enabled
+  - streamChannels
+properties:
+  code:
+    type: string
+  displayName:
+    type: string
+  enabled:
+    type: boolean
+  streamChannels:
+    type: array
+    items:
+      $ref: "./StreamChannel.yaml"

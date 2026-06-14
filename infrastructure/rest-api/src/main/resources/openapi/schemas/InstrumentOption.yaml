@@ -1,0 +1,22 @@
+type: object
+required:
+  - symbol
+  - baseAsset
+  - quoteAsset
+  - displaySymbol
+  - enabled
+properties:
+  symbol:
+    type: string
+  baseAsset:
+    type: string
+  baseAssetDisplayName:
+    type: string
+  quoteAsset:
+    type: string
+  quoteAssetDisplayName:
+    type: string
+  displaySymbol:
+    type: string
+  enabled:
+    type: boolean

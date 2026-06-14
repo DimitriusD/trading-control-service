@@ -1,0 +1,17 @@
+type: object
+required:
+  - code
+  - displayName
+  - enabled
+  - marketTypes
+properties:
+  code:
+    type: string
+  displayName:
+    type: string
+  enabled:
+    type: boolean
+  marketTypes:
+    type: array
+    items:
+      $ref: "./MarketType.yaml"

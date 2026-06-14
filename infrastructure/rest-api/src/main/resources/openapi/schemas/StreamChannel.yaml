@@ -1,0 +1,23 @@
+type: object
+required:
+  - type
+  - displayName
+  - enabled
+  - enabledByDefault
+  - params
+properties:
+  type:
+    type: string
+    enum:
+      - TRADE
+      - DEPTH_DIFF
+  displayName:
+    type: string
+  enabled:
+    type: boolean
+  enabledByDefault:
+    type: boolean
+  params:
+    type: array
+    items:
+      $ref: "./ChannelParam.yaml"

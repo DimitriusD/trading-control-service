@@ -104,7 +104,7 @@ curl http://localhost:8080/api/v1/items
 ## Project Structure
 
 ```
-hexagonal-service-template/
+trading-control-service/
 ├── build.gradle.kts                 # Root build: Java 21, JUnit Platform
 ├── settings.gradle.kts              # Module declarations
 ├── gradle/libs.versions.toml        # Centralized dependency versions
@@ -143,6 +143,26 @@ hexagonal-service-template/
 │           └── ItemEvent.java
 ├── init.ps1                          # PowerShell init script
 └── init.sh                           # Bash init script
+```
+
+## Publishing OpenAPI contract locally
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+This publishes:
+
+`com.trading.contracts:trading-control-service-openapi:<version>@yaml`
+
+to Maven Local (`~/.m2/repository`).
+
+Consumer projects can use the bundled OpenAPI YAML to generate TypeScript or Java clients.
+
+To see the exact artifact path for the current version:
+
+```bash
+./gradlew printOpenApiContractArtifactPath
 ```
 
 ## Environment Variables
