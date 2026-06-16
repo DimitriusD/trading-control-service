@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: trading-control-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: trading
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+
+

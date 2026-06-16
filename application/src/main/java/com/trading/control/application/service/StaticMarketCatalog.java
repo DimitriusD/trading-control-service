@@ -107,6 +107,14 @@ public final class StaticMarketCatalog {
         return CATALOG;
     }
 
+    /**
+     * Stream channels offered for every market type. Channel definitions are not
+     * persisted yet, so they are served from static configuration.
+     */
+    public static List<StreamChannelOption> defaultStreamChannels() {
+        return List.of(TRADE_CHANNEL, DEPTH_DIFF_CHANNEL);
+    }
+
     public static boolean hasExchange(String exchange) {
         return INSTRUMENTS.containsKey(exchange);
     }

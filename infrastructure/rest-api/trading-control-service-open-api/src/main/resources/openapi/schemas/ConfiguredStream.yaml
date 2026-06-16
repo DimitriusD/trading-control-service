@@ -36,7 +36,7 @@ properties:
   channels:
     type: array
     items:
-      $ref: "./StreamChannelConfig.yaml"
+      $ref: "./ChannelDefinition.yaml"
   desired:
     type: string
     enum:

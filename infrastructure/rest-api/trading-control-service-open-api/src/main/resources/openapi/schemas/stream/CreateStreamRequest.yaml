@@ -1,0 +1,16 @@
+type: object
+required:
+  - exchange
+  - marketType
+  - instrument
+  - channels
+  - startImmediately
+properties:
+  instrument:
+    $ref: './InstrumentId.yaml'
+  channels:
+    type: array
+    items:
+      $ref: "./ChannelDefinition.yaml"
+  startImmediately:
+    type: boolean

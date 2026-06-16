@@ -68,7 +68,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./schemas/CreateStreamRequest.yaml"
+              $ref: "./schemas/stream/CreateStreamRequest.yaml"
       responses:
         "201":
           description: Created

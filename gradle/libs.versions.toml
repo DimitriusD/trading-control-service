@@ -13,6 +13,7 @@ springContext = "6.1.14"
 jakartaServlet = "6.0.0"
 mapstruct = "1.6.3"
 lombok = "1.18.34"
+postgresql = "42.7.4"
 
 [libraries]
 springBom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
@@ -27,7 +28,10 @@ jacksonCore = { module = "com.fasterxml.jackson.core:jackson-core" }
 springBootStarterWeb = { module = "org.springframework.boot:spring-boot-starter-web" }
 springBootStarterActuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 springBootStarterValidation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+springBootStarterJdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
+springBootStarterDataJdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
 springBootStarterTest = { module = "org.springframework.boot:spring-boot-starter-test" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 openapiJacksonNullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jacksonNullable" }
 swaggerAnnotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swaggerAnnotations" }
 jakartaAnnotationApi = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakartaAnnotation" }
