@@ -8,5 +8,5 @@ import lombok.Value;
 public class ChannelParamValue {
     String value;
     String displayName;
-    boolean defaultFlag;
+    boolean isDefault;
 }

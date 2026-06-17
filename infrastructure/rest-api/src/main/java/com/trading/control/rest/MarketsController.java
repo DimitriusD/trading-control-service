@@ -11,20 +11,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class MarketsController implements MarketsApi {
 
     private final MarketCatalogService marketCatalogService;
+    private final MarketCatalogWebMapper marketCatalogWebMapper;
 
-    public MarketsController(MarketCatalogService marketCatalogService) {
+    public MarketsController(MarketCatalogService marketCatalogService,
+                             MarketCatalogWebMapper marketCatalogWebMapper) {
         this.marketCatalogService = marketCatalogService;
+        this.marketCatalogWebMapper = marketCatalogWebMapper;
     }
 
     @Override
     public MarketCatalogResponseWebDto getMarkets() {
-        return MarketCatalogWebMapper.toMarketCatalogResponse(
-                marketCatalogService.getMarkets());
+        return marketCatalogWebMapper.toMarketCatalogResponse(marketCatalogService.getMarkets());
     }
 
     @Override
     public MarketInstrumentsResponseWebDto getMarketInstruments(String exchange, String marketType) {
-        return MarketCatalogWebMapper.toMarketInstrumentsResponse(
+        return marketCatalogWebMapper.toMarketInstrumentsResponse(
                 marketCatalogService.getInstruments(exchange, marketType));
     }
 }

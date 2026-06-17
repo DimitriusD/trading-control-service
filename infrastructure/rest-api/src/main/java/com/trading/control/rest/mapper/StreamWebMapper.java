@@ -24,30 +24,18 @@ public final class StreamWebMapper {
 
     public static CreateStreamCommand toCreateStreamCommand(CreateStreamRequestWebDto request) {
         InstrumentIdWebDto instrument = request.getInstrument();
-        return CreateStreamCommand.builder()
-                .exchange(instrument.getExchange())
-                .marketType(instrument.getMarket())
-                .instrument(CreateStreamInstrument.builder()
-                        .baseAsset(instrument.getBaseAsset())
-                        .quoteAsset(instrument.getQuoteAsset())
-                        .build())
-                .channels(toChannelConfigs(request.getChannels()))
-                .startImmediately(Boolean.TRUE.equals(request.getStartImmediately()))
-                .build();
+        return CreateStreamCommand.builder().exchange(instrument.getExchange()).marketType(instrument.getMarket()).instrument(CreateStreamInstrument.builder().baseAsset(instrument.getBaseAsset()).quoteAsset(instrument.getQuoteAsset()).build()).channels(toChannelConfigs(request.getChannels())).startImmediately(Boolean.TRUE.equals(request.getStartImmediately())).build();
     }
 
     private static List<StreamChannelConfig> toChannelConfigs(List<ChannelWebDto> channels) {
         if (channels == null) {
             return List.of();
         }
-        return channels.stream()
-                .map(StreamWebMapper::toChannelConfig)
-                .toList();
+        return channels.stream().map(StreamWebMapper::toChannelConfig).toList();
     }
 
     private static StreamChannelConfig toChannelConfig(ChannelWebDto channel) {
-        StreamChannelConfig.StreamChannelConfigBuilder builder = StreamChannelConfig.builder()
-                .type(MarketDataChannelType.valueOf(channel.getCode()));
+        StreamChannelConfig.StreamChannelConfigBuilder builder = StreamChannelConfig.builder().type(MarketDataChannelType.valueOf(channel.getCode()));
         if (channel.getParams() != null) {
             for (ChannelParamWebDto param : channel.getParams()) {
                 builder.param(param.getKey(), selectedValue(param));
@@ -56,17 +44,15 @@ public final class StreamWebMapper {
         return builder.build();
     }
 
-    /** Resolve a param's configured value: the one flagged default, else the first available. */
+    /**
+     * Resolve a param's configured value: the one flagged default, else the first available.
+     */
     private static String selectedValue(ChannelParamWebDto param) {
         List<ChannelParamValueWebDto> values = param.getValues();
         if (values == null || values.isEmpty()) {
             return null;
         }
-        return values.stream()
-                .filter(v -> Boolean.TRUE.equals(v.getDefault()))
-                .map(ChannelParamValueWebDto::getValue)
-                .findFirst()
-                .orElseGet(() -> values.get(0).getValue());
+        return values.stream().filter(v -> Boolean.TRUE.equals(v.getIsDefault())).map(ChannelParamValueWebDto::getValue).findFirst().orElseGet(() -> values.get(0).getValue());
     }
 
     // ===== outbound: ConfiguredStream -> StreamResponse =====
@@ -75,9 +61,7 @@ public final class StreamWebMapper {
         var dto = new StreamResponseWebDto();
         dto.setStreamId(stream.getId());
         dto.setInstrument(toInstrumentId(stream));
-        dto.setChannels(stream.getChannels().stream()
-                .map(StreamWebMapper::toChannel)
-                .toList());
+        dto.setChannels(stream.getChannels().stream().map(StreamWebMapper::toChannel).toList());
         dto.setDesired(StreamResponseWebDto.DesiredEnum.fromValue(stream.getDesired().name()));
         dto.setRuntime(StreamResponseWebDto.RuntimeEnum.fromValue(stream.getRuntime().name()));
         dto.setHealth(StreamResponseWebDto.HealthEnum.fromValue(stream.getHealth().name()));
@@ -98,9 +82,7 @@ public final class StreamWebMapper {
         dto.setCode(channel.getType().name());
         dto.setName(channel.getType().name());
         dto.setEnabled(true);
-        dto.setParams(channel.getParams().entrySet().stream()
-                .map(StreamWebMapper::toChannelParam)
-                .toList());
+        dto.setParams(channel.getParams().entrySet().stream().map(StreamWebMapper::toChannelParam).toList());
         return dto;
     }
 
@@ -108,7 +90,7 @@ public final class StreamWebMapper {
         var value = new ChannelParamValueWebDto();
         value.setValue(entry.getValue());
         value.setDisplayName(entry.getValue());
-        value.setDefault(true);
+        value.isDefault(true);
 
         var dto = new ChannelParamWebDto();
         dto.setKey(entry.getKey());

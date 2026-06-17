@@ -34,7 +34,7 @@ public class ExchangeMarketChannelParamAllowedValueEntity {
     private Integer sortOrder;
 
     @Column("is_default")
-    private boolean defaultFlag;
+    private boolean isDefault;
 
     private boolean enabled;
 

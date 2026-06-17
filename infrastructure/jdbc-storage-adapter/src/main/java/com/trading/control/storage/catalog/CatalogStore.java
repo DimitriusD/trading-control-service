@@ -166,7 +166,7 @@ public class CatalogStore implements CatalogStorePort {
                             .forEach(value -> paramBuilder.value(ChannelParamValue.builder()
                                     .value(value.getValue())
                                     .displayName(value.getDisplayName())
-                                    .defaultFlag(value.isDefaultFlag())
+                                    .isDefault(value.isDefault())
                                     .build()));
                     builder.param(paramBuilder.build());
                 });

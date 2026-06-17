@@ -13,4 +13,3 @@ properties:
     type: string
   quoteAsset:
     type: string
-
