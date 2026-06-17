@@ -11,4 +11,4 @@ properties:
   instruments:
     type: array
     items:
-      $ref: "./InstrumentOption.yaml"
+      $ref: "./Instrument.yaml"

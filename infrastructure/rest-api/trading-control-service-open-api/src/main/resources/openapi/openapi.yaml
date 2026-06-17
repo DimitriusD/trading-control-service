@@ -16,7 +16,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/MarketCatalogResponse.yaml"
+                $ref: "./schemas/market/MarketCatalogResponse.yaml"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -35,7 +35,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/MarketInstrumentsResponse.yaml"
+                $ref: "./schemas/instrument/MarketInstrumentsResponse.yaml"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -44,7 +44,7 @@ paths:
   /api/v1/streams:
     get:
       summary: Get configured streams
-      operationId: getConfiguredStreams
+      operationId: getStreams
       tags:
         - streams
       responses:
@@ -55,7 +55,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "./schemas/ConfiguredStream.yaml"
+                  $ref: "./schemas/stream/StreamResponse.yaml"
         "500":
           $ref: "#/components/responses/InternalError"
     post:
@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/ConfiguredStream.yaml"
+                $ref: "./schemas/stream/StreamResponse.yaml"
         "400":
           $ref: "#/components/responses/BadRequest"
         "500":
@@ -111,7 +111,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/ConfiguredStream.yaml"
+                $ref: "./schemas/stream/StreamResponse.yaml"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -131,7 +131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/ConfiguredStream.yaml"
+                $ref: "./schemas/stream/StreamResponse.yaml"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
@@ -164,16 +164,16 @@ components:
       content:
         application/json:
           schema:
-            $ref: "./schemas/ErrorResponse.yaml"
+            $ref: "./schemas/error/ErrorResponse.yaml"
     NotFound:
       description: Not found
       content:
         application/json:
           schema:
-            $ref: "./schemas/ErrorResponse.yaml"
+            $ref: "./schemas/error/ErrorResponse.yaml"
     InternalError:
       description: Internal server error
       content:
         application/json:
           schema:
-            $ref: "./schemas/ErrorResponse.yaml"
+            $ref: "./schemas/error/ErrorResponse.yaml"

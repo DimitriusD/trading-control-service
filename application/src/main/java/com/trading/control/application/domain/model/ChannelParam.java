@@ -8,10 +8,8 @@ import java.util.List;
 
 @Value
 @Builder
-public class ExchangeMarket {
-    String code;
-    String displayName;
-    boolean enabled;
+public class ChannelParam {
+    String key;
     @Singular
-    List<MarketType> marketTypes;
+    List<ChannelParamValue> values;
 }

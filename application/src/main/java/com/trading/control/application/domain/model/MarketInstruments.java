@@ -12,5 +12,5 @@ public class MarketInstruments {
     String exchange;
     String marketType;
     @Singular
-    List<InstrumentOption> instruments;
+    List<Instrument> instruments;
 }

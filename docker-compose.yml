@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:17.9
     container_name: trading-control-postgres
     restart: unless-stopped
     environment:

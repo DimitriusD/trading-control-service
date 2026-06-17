@@ -1,10 +1,9 @@
 package com.trading.control.application.port.output;
 
-import com.trading.control.application.domain.model.catalog.Exchange;
-import com.trading.control.application.domain.model.catalog.ExchangeMarketLink;
-import com.trading.control.application.domain.model.catalog.MarketType;
+import com.trading.control.application.domain.model.MarketCatalog;
+import com.trading.control.application.domain.model.MarketInstruments;
 
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Output port for reading the market catalog from durable storage.
@@ -12,9 +11,16 @@ import java.util.List;
  */
 public interface CatalogStorePort {
 
-    List<Exchange> findExchanges();
+    /**
+     * The full market catalog: exchanges → market types → channels → params → allowed values.
+     */
+    MarketCatalog getMarkets();
 
-    List<MarketType> findMarketTypes();
-
-    List<ExchangeMarketLink> findExchangeMarkets();
+    /**
+     * Instruments offered for a given exchange/market-type pair.
+     *
+     * @return empty if the exchange/market-type pair does not exist; otherwise the
+     * (possibly empty) instrument list.
+     */
+    Optional<MarketInstruments> getInstruments(String exchange, String marketType);
 }

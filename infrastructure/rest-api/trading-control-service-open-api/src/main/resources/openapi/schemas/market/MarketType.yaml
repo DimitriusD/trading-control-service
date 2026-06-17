@@ -3,7 +3,7 @@ required:
   - code
   - displayName
   - enabled
-  - streamChannels
+  - channels
 properties:
   code:
     type: string
@@ -11,7 +11,7 @@ properties:
     type: string
   enabled:
     type: boolean
-  streamChannels:
+  channels:
     type: array
     items:
-      $ref: "./StreamChannel.yaml"
+      $ref: "../channel/Channel.yaml"

@@ -1,21 +1,15 @@
 type: object
 required:
-  - type
-  - displayName
+  - code
+  - name
   - enabled
-  - enabledByDefault
   - params
 properties:
-  type:
+  code:
     type: string
-    enum:
-      - TRADE
-      - DEPTH_DIFF
-  displayName:
+  name:
     type: string
   enabled:
-    type: boolean
-  enabledByDefault:
     type: boolean
   params:
     type: array

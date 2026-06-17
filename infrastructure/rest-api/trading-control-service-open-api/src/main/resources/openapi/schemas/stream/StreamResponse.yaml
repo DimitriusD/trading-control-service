@@ -1,42 +1,20 @@
 type: object
 required:
-  - id
-  - instrumentId
-  - instrumentKey
-  - pair
-  - symbol
-  - exchange
-  - market
-  - baseAsset
-  - quoteAsset
+  - streamId
+  - instrument
   - channels
   - desired
   - runtime
   - health
-  - autoRestart
 properties:
-  id:
+  streamId:
     type: string
-  instrumentId:
-    type: string
-  instrumentKey:
-    type: string
-  pair:
-    type: string
-  symbol:
-    type: string
-  exchange:
-    type: string
-  market:
-    type: string
-  baseAsset:
-    type: string
-  quoteAsset:
-    type: string
+  instrument:
+    $ref: './InstrumentId.yaml'
   channels:
     type: array
     items:
-      $ref: "./ChannelDefinition.yaml"
+      $ref: "../channel/Channel.yaml"
   desired:
     type: string
     enum:
@@ -58,5 +36,3 @@ properties:
       - WARMING_UP
       - DEGRADED
       - UNKNOWN
-  autoRestart:
-    type: boolean

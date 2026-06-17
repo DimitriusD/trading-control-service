@@ -5,4 +5,4 @@ properties:
   exchanges:
     type: array
     items:
-      $ref: "./ExchangeMarket.yaml"
+      $ref: "./Exchange.yaml"

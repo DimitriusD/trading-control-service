@@ -1,21 +1,17 @@
 type: object
 required:
-  - symbol
+  - instrument_id
   - baseAsset
   - quoteAsset
   - displaySymbol
   - enabled
 properties:
-  symbol:
+  instrument_id:
     type: string
   baseAsset:
-    type: string
-  baseAssetDisplayName:
-    type: string
+    $ref: "../asset/Asset.yaml"
   quoteAsset:
-    type: string
-  quoteAssetDisplayName:
-    type: string
+    $ref: "../asset/Asset.yaml"
   displaySymbol:
     type: string
   enabled:

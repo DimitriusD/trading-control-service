@@ -2,8 +2,11 @@ type: object
 required:
   - value
   - displayName
+  - default
 properties:
   value:
     type: string
   displayName:
     type: string
+  default:
+    type: boolean

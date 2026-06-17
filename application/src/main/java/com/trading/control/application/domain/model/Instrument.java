@@ -5,12 +5,10 @@ import lombok.Value;
 
 @Value
 @Builder
-public class InstrumentOption {
-    String symbol;
-    String baseAsset;
-    String baseAssetDisplayName;
-    String quoteAsset;
-    String quoteAssetDisplayName;
+public class Instrument {
+    String instrumentId;
+    Asset baseAsset;
+    Asset quoteAsset;
     String displaySymbol;
     boolean enabled;
 }

@@ -8,10 +8,10 @@ import java.util.List;
 
 @Value
 @Builder
-public class MarketTypeDescriptor {
+public class Channel {
     String code;
-    String displayName;
+    String name;
     boolean enabled;
     @Singular
-    List<StreamChannelOption> streamChannels;
+    List<ChannelParam> params;
 }

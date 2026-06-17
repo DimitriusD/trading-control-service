@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ChannelParamAllowedValue {
-    String value;
-    String displayName;
+public class Asset {
+    String code;
+    String name;
 }

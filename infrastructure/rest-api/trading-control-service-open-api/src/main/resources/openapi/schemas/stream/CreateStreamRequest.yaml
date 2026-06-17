@@ -1,7 +1,5 @@
 type: object
 required:
-  - exchange
-  - marketType
   - instrument
   - channels
   - startImmediately
@@ -11,6 +9,6 @@ properties:
   channels:
     type: array
     items:
-      $ref: "./ChannelDefinition.yaml"
+      $ref: "../channel/Channel.yaml"
   startImmediately:
     type: boolean

@@ -1,14 +1,16 @@
 package com.trading.control.rest.mapper;
 
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
 import com.trading.control.application.domain.model.CreateStreamCommand;
 import com.trading.control.application.domain.model.CreateStreamInstrument;
 import com.trading.control.application.domain.model.enums.MarketDataChannelType;
+import com.trading.control.application.domain.model.stream.ConfiguredStream;
 import com.trading.control.application.domain.model.stream.chanel.StreamChannelConfig;
-import com.trading.control.restapi.generated.model.ConfiguredStreamWebDto;
-import com.trading.control.restapi.generated.model.CreateStreamInstrumentWebDto;
+import com.trading.control.restapi.generated.model.ChannelParamValueWebDto;
+import com.trading.control.restapi.generated.model.ChannelParamWebDto;
+import com.trading.control.restapi.generated.model.ChannelWebDto;
 import com.trading.control.restapi.generated.model.CreateStreamRequestWebDto;
-import com.trading.control.restapi.generated.model.StreamChannelConfigWebDto;
+import com.trading.control.restapi.generated.model.InstrumentIdWebDto;
+import com.trading.control.restapi.generated.model.StreamResponseWebDto;
 
 import java.util.List;
 import java.util.Map;
@@ -18,24 +20,23 @@ public final class StreamWebMapper {
     private StreamWebMapper() {
     }
 
+    // ===== inbound: CreateStreamRequest -> CreateStreamCommand =====
+
     public static CreateStreamCommand toCreateStreamCommand(CreateStreamRequestWebDto request) {
-        CreateStreamInstrumentWebDto instrument = request.getInstrument();
+        InstrumentIdWebDto instrument = request.getInstrument();
         return CreateStreamCommand.builder()
-                .exchange(request.getExchange())
-                .marketType(request.getMarketType())
+                .exchange(instrument.getExchange())
+                .marketType(instrument.getMarket())
                 .instrument(CreateStreamInstrument.builder()
-                        .symbol(instrument.getSymbol())
                         .baseAsset(instrument.getBaseAsset())
                         .quoteAsset(instrument.getQuoteAsset())
-                        .instrumentId(instrument.getInstrumentId())
                         .build())
                 .channels(toChannelConfigs(request.getChannels()))
                 .startImmediately(Boolean.TRUE.equals(request.getStartImmediately()))
-                .autoRestart(Boolean.TRUE.equals(request.getAutoRestart()))
                 .build();
     }
 
-    private static List<StreamChannelConfig> toChannelConfigs(List<StreamChannelConfigWebDto> channels) {
+    private static List<StreamChannelConfig> toChannelConfigs(List<ChannelWebDto> channels) {
         if (channels == null) {
             return List.of();
         }
@@ -44,40 +45,74 @@ public final class StreamWebMapper {
                 .toList();
     }
 
-    private static StreamChannelConfig toChannelConfig(StreamChannelConfigWebDto channel) {
-        return StreamChannelConfig.builder()
-                .type(MarketDataChannelType.valueOf(channel.getType().getValue()))
-                .params(channel.getParams() == null ? Map.of() : channel.getParams())
-                .build();
+    private static StreamChannelConfig toChannelConfig(ChannelWebDto channel) {
+        StreamChannelConfig.StreamChannelConfigBuilder builder = StreamChannelConfig.builder()
+                .type(MarketDataChannelType.valueOf(channel.getCode()));
+        if (channel.getParams() != null) {
+            for (ChannelParamWebDto param : channel.getParams()) {
+                builder.param(param.getKey(), selectedValue(param));
+            }
+        }
+        return builder.build();
     }
 
-    public static ConfiguredStreamWebDto toConfiguredStream(ConfiguredStream stream) {
-        var dto = new ConfiguredStreamWebDto();
+    /** Resolve a param's configured value: the one flagged default, else the first available. */
+    private static String selectedValue(ChannelParamWebDto param) {
+        List<ChannelParamValueWebDto> values = param.getValues();
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        return values.stream()
+                .filter(v -> Boolean.TRUE.equals(v.getDefault()))
+                .map(ChannelParamValueWebDto::getValue)
+                .findFirst()
+                .orElseGet(() -> values.get(0).getValue());
+    }
 
+    // ===== outbound: ConfiguredStream -> StreamResponse =====
 
-        dto.setId(stream.getId());
-        dto.setInstrumentId(stream.getInstrumentId());
-        dto.setInstrumentKey(stream.getInstrumentKey());
-        dto.setPair(stream.getPair());
-        dto.setSymbol(stream.getSymbol());
+    public static StreamResponseWebDto toStreamResponse(ConfiguredStream stream) {
+        var dto = new StreamResponseWebDto();
+        dto.setStreamId(stream.getId());
+        dto.setInstrument(toInstrumentId(stream));
+        dto.setChannels(stream.getChannels().stream()
+                .map(StreamWebMapper::toChannel)
+                .toList());
+        dto.setDesired(StreamResponseWebDto.DesiredEnum.fromValue(stream.getDesired().name()));
+        dto.setRuntime(StreamResponseWebDto.RuntimeEnum.fromValue(stream.getRuntime().name()));
+        dto.setHealth(StreamResponseWebDto.HealthEnum.fromValue(stream.getHealth().name()));
+        return dto;
+    }
+
+    private static InstrumentIdWebDto toInstrumentId(ConfiguredStream stream) {
+        var dto = new InstrumentIdWebDto();
         dto.setExchange(stream.getExchange());
         dto.setMarket(stream.getMarket());
         dto.setBaseAsset(stream.getBaseAsset());
         dto.setQuoteAsset(stream.getQuoteAsset());
-        dto.setChannels(stream.getChannels().stream()
-                .map(StreamWebMapper::toStreamChannelConfig)
-                .toList());
-        dto.setDesired(ConfiguredStreamWebDto.DesiredEnum.fromValue(stream.getDesired().name()));
-        dto.setRuntime(ConfiguredStreamWebDto.RuntimeEnum.fromValue(stream.getRuntime().name()));
-        dto.setHealth(ConfiguredStreamWebDto.HealthEnum.fromValue(stream.getHealth().name()));
-        dto.setAutoRestart(stream.isAutoRestart());
         return dto;
     }
 
-    private static StreamChannelConfigWebDto toStreamChannelConfig(StreamChannelConfig channel) {
-        var dto = new StreamChannelConfigWebDto();
-        dto.setType(StreamChannelConfigWebDto.TypeEnum.fromValue(channel.getType().name()));
-        dto.setParams(channel.getParams());
+    private static ChannelWebDto toChannel(StreamChannelConfig channel) {
+        var dto = new ChannelWebDto();
+        dto.setCode(channel.getType().name());
+        dto.setName(channel.getType().name());
+        dto.setEnabled(true);
+        dto.setParams(channel.getParams().entrySet().stream()
+                .map(StreamWebMapper::toChannelParam)
+                .toList());
+        return dto;
+    }
+
+    private static ChannelParamWebDto toChannelParam(Map.Entry<String, String> entry) {
+        var value = new ChannelParamValueWebDto();
+        value.setValue(entry.getValue());
+        value.setDisplayName(entry.getValue());
+        value.setDefault(true);
+
+        var dto = new ChannelParamWebDto();
+        dto.setKey(entry.getKey());
+        dto.setValues(List.of(value));
         return dto;
     }
 }

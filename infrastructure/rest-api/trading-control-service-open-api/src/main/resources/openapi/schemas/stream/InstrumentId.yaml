@@ -1,15 +1,16 @@
 type: object
 required:
-  - symbol
+  - exchange
+  - market
   - baseAsset
   - quoteAsset
-  - instrumentId
 properties:
-  symbol:
+  exchange:
     type: string
+  market:
+      type: string
   baseAsset:
     type: string
   quoteAsset:
     type: string
-  instrumentId:
-    type: string
+
