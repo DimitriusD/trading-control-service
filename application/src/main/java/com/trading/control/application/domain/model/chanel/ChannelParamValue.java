@@ -1,4 +1,4 @@
-package com.trading.control.application.domain.model;
+package com.trading.control.application.domain.model.chanel;
 
 import lombok.Builder;
 import lombok.Value;

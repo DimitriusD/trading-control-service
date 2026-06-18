@@ -1,11 +1,11 @@
 package com.trading.control.storage.catalog;
 
 import com.trading.control.application.domain.model.Asset;
-import com.trading.control.application.domain.model.Channel;
-import com.trading.control.application.domain.model.ChannelParam;
-import com.trading.control.application.domain.model.ChannelParamValue;
+import com.trading.control.application.domain.model.chanel.Channel;
+import com.trading.control.application.domain.model.chanel.ChannelParam;
+import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.ExchangeMarket;
-import com.trading.control.application.domain.model.Instrument;
+import com.trading.control.application.domain.model.instrument.Instrument;
 import com.trading.control.application.domain.model.MarketCatalog;
 import com.trading.control.application.domain.model.MarketInstruments;
 import com.trading.control.application.domain.model.MarketType;

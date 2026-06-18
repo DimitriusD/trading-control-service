@@ -1,0 +1,10 @@
+type: object
+additionalProperties: false
+required:
+  - key
+  - value
+properties:
+  key:
+    type: string
+  value:
+    type: string

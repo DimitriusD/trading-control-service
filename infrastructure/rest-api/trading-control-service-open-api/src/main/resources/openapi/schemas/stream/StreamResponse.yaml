@@ -14,7 +14,7 @@ properties:
   channels:
     type: array
     items:
-      $ref: "../channel/Channel.yaml"
+      $ref: "../channel/ChannelSelection.yaml"
   desired:
     type: string
     enum:

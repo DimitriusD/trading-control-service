@@ -1,13 +1,12 @@
 package com.trading.control.marketdata;
 
-import com.trading.control.application.domain.model.CreateStreamCommand;
-import com.trading.control.application.domain.model.CreateStreamInstrument;
-import com.trading.control.application.domain.model.enums.MarketDataChannelType;
+import com.trading.control.application.domain.model.chanel.Channel;
+import com.trading.control.application.domain.model.chanel.ChannelParam;
+import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.enums.StreamDesiredState;
-import com.trading.control.application.domain.model.enums.StreamHealthState;
 import com.trading.control.application.domain.model.enums.StreamRuntimeState;
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
-import com.trading.control.application.domain.model.stream.chanel.StreamChannelConfig;
+import com.trading.control.application.domain.model.instrument.InstrumentId;
+import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.mds.client.model.ChannelDefinitionDto;
 import com.trading.mds.client.model.ChannelTypeDto;
 import com.trading.mds.client.model.CreateStreamRequestDto;
@@ -15,91 +14,124 @@ import com.trading.mds.client.model.ExchangeDto;
 import com.trading.mds.client.model.InstrumentIdDto;
 import com.trading.mds.client.model.MarketTypeDto;
 import com.trading.mds.client.model.StreamResponseDto;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-final class MarketDataStreamMapper {
+@Mapper(componentModel = "spring")
+public interface MarketDataStreamMapper {
 
-    private MarketDataStreamMapper() {
+
+    @Mapping(target = "instrument", source = "instrumentId")
+    @Mapping(target = "channels", source = "channels")
+    @Mapping(target = "enabled", source = "desired", qualifiedByName = "desiredToEnabled")
+    CreateStreamRequestDto toCreateRequest(StreamDefinition definition);
+
+    @Mapping(target = "exchange", source = "exchangeCode")
+    @Mapping(target = "market", source = "marketCode")
+    @Mapping(target = "base", source = "baseAssetCode")
+    @Mapping(target = "quote", source = "quoteAssetCode")
+    InstrumentIdDto toInstrumentIdDto(InstrumentId id);
+
+    @Mapping(target = "type", source = "code")
+    @Mapping(target = "enabled", constant = "true")
+    @Mapping(target = "params", source = "params")
+    ChannelDefinitionDto toChannelDefinition(Channel channel);
+
+    @Mapping(target = "instrumentId", source = "instrument")
+    @Mapping(target = "desired", source = "enabled", qualifiedByName = "enabledToDesired")
+    @Mapping(target = "runtime", source = "enabled", qualifiedByName = "enabledToRuntime")
+    @Mapping(target = "health", constant = "UNKNOWN")
+    @Mapping(target = "channel", ignore = true)
+    StreamDefinition toStreamDefinition(StreamResponseDto dto);
+
+    @Mapping(target = "exchangeCode", source = "exchange")
+    @Mapping(target = "marketCode", source = "market")
+    @Mapping(target = "baseAssetCode", source = "base")
+    @Mapping(target = "quoteAssetCode", source = "quote")
+    InstrumentId toInstrumentId(InstrumentIdDto dto);
+
+    @Mapping(target = "code", source = "type")
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "param", ignore = true)
+    @Mapping(target = "params", source = "params")
+    Channel toChannel(ChannelDefinitionDto dto);
+
+
+    default ExchangeDto toExchangeDto(String code) {
+        return code == null ? null : ExchangeDto.fromValue(code);
     }
 
-    static CreateStreamRequestDto toCreateRequest(CreateStreamCommand command) {
-        CreateStreamInstrument instrument = command.getInstrument();
+    default MarketTypeDto toMarketTypeDto(String code) {
+        return code == null ? null : MarketTypeDto.fromValue(code);
+    }
 
-        InstrumentIdDto instrumentId = new InstrumentIdDto()
-                .exchange(ExchangeDto.fromValue(command.getExchange()))
-                .market(MarketTypeDto.fromValue(command.getMarketType()))
-                .base(instrument.getBaseAsset())
-                .quote(instrument.getQuoteAsset());
+    default ChannelTypeDto toChannelTypeDto(String code) {
+        return code == null ? null : ChannelTypeDto.fromValue(code);
+    }
 
-        List<ChannelDefinitionDto> channels = command.getChannels().stream()
-                .map(MarketDataStreamMapper::toChannelDefinition)
+    default String fromExchange(ExchangeDto exchange) {
+        return exchange == null ? null : exchange.getValue();
+    }
+
+    default String fromMarketType(MarketTypeDto market) {
+        return market == null ? null : market.getValue();
+    }
+
+    default String fromChannelType(ChannelTypeDto type) {
+        return type == null ? null : type.getValue();
+    }
+
+    default Map<String, String> toParamMap(List<ChannelParam> params) {
+        if (params == null) {
+            return Map.of();
+        }
+        Map<String, String> map = new LinkedHashMap<>();
+        for (ChannelParam param : params) {
+            map.put(param.getKey(), selectedValue(param.getValues()));
+        }
+        return map;
+    }
+
+    default List<ChannelParam> toChannelParams(Map<String, String> params) {
+        if (params == null) {
+            return List.of();
+        }
+        return params.entrySet().stream()
+                .map(entry -> ChannelParam.builder()
+                        .key(entry.getKey())
+                        .value(ChannelParamValue.builder().value(entry.getValue()).build())
+                        .build())
                 .toList();
-
-        return new CreateStreamRequestDto()
-                .instrument(instrumentId)
-                .channels(channels)
-                .enabled(command.isStartImmediately());
     }
 
-    static ConfiguredStream toConfiguredStream(StreamResponseDto dto) {
-        InstrumentIdDto instrument = dto.getInstrument();
-        String exchange = instrument.getExchange().getValue();
-        String market = instrument.getMarket().getValue();
-        String base = instrument.getBase();
-        String quote = instrument.getQuote();
-        boolean enabled = Boolean.TRUE.equals(dto.getEnabled());
+    @Named("desiredToEnabled")
+    default Boolean desiredToEnabled(StreamDesiredState desired) {
+        return desired == StreamDesiredState.ENABLED;
+    }
 
-        ConfiguredStream.ConfiguredStreamBuilder builder = ConfiguredStream.builder()
-                .id(dto.getStreamId())
-                .instrumentId(String.join(":", exchange, market, base, quote))
-                .instrumentKey(String.join("_", exchange, market, base, quote))
-                .pair(base + "/" + quote)
-                .symbol(base + quote)
-                .exchange(exchange)
-                .market(market)
-                .baseAsset(base)
-                .quoteAsset(quote)
-                .desired(enabled ? StreamDesiredState.ENABLED : StreamDesiredState.DISABLED)
-                .runtime(enabled ? StreamRuntimeState.RUNNING : StreamRuntimeState.STOPPED)
-                .health(StreamHealthState.UNKNOWN)
-                .autoRestart(false);
+    @Named("enabledToDesired")
+    default StreamDesiredState enabledToDesired(Boolean enabled) {
+        return Boolean.TRUE.equals(enabled) ? StreamDesiredState.ENABLED : StreamDesiredState.DISABLED;
+    }
 
-        List<ChannelDefinitionDto> channels = dto.getChannels();
-        if (channels != null) {
-            channels.stream()
-                    .map(MarketDataStreamMapper::toChannelConfig)
-                    .flatMap(Optional::stream)
-                    .forEach(builder::channel);
+    @Named("enabledToRuntime")
+    default StreamRuntimeState enabledToRuntime(Boolean enabled) {
+        return Boolean.TRUE.equals(enabled) ? StreamRuntimeState.RUNNING : StreamRuntimeState.STOPPED;
+    }
+
+    default String selectedValue(List<ChannelParamValue> values) {
+        if (values == null || values.isEmpty()) {
+            return null;
         }
-        return builder.build();
-    }
-
-    private static ChannelDefinitionDto toChannelDefinition(StreamChannelConfig channel) {
-        return new ChannelDefinitionDto()
-                .type(ChannelTypeDto.fromValue(channel.getType().name()))
-                .enabled(true)
-                .params(channel.getParams() == null ? Map.of() : channel.getParams());
-    }
-
-    private static Optional<StreamChannelConfig> toChannelConfig(ChannelDefinitionDto dto) {
-        return toChannelType(dto.getType())
-                .map(type -> StreamChannelConfig.builder()
-                        .type(type)
-                        .params(dto.getParams() == null ? Map.of() : dto.getParams())
-                        .build());
-    }
-
-    private static Optional<MarketDataChannelType> toChannelType(ChannelTypeDto type) {
-        if (type == null) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(MarketDataChannelType.valueOf(type.getValue()));
-        } catch (IllegalArgumentException ex) {
-            return Optional.empty();
-        }
+        return values.stream()
+                .filter(ChannelParamValue::isDefault)
+                .map(ChannelParamValue::getValue)
+                .findFirst()
+                .orElseGet(() -> values.get(0).getValue());
     }
 }

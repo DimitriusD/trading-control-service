@@ -15,31 +15,35 @@ import java.util.List;
 public class StreamsController implements StreamsApi {
 
     private final StreamService streamService;
+    private final StreamWebMapper streamWebMapper;
 
-    public StreamsController(StreamService streamService) {
+    public StreamsController(StreamService streamService, StreamWebMapper streamWebMapper) {
         this.streamService = streamService;
+        this.streamWebMapper = streamWebMapper;
     }
 
     @Override
     public List<StreamResponseWebDto> getStreams() {
-        return streamService.getConfiguredStreams().stream().map(StreamWebMapper::toStreamResponse).toList();
+        return streamService.getConfiguredStreams().stream()
+                .map(streamWebMapper::toStreamResponse)
+                .toList();
     }
 
     @Override
     @ResponseStatus(HttpStatus.CREATED)
     public StreamResponseWebDto createStream(CreateStreamRequestWebDto createStreamRequestWebDto) {
-        var created = streamService.createStream(StreamWebMapper.toCreateStreamCommand(createStreamRequestWebDto));
-        return StreamWebMapper.toStreamResponse(created);
+        var created = streamService.createStream(streamWebMapper.toStreamDefinition(createStreamRequestWebDto));
+        return streamWebMapper.toStreamResponse(created);
     }
 
     @Override
     public StreamResponseWebDto startStream(String streamId) {
-        return StreamWebMapper.toStreamResponse(streamService.startStream(streamId));
+        return streamWebMapper.toStreamResponse(streamService.startStream(streamId));
     }
 
     @Override
     public StreamResponseWebDto stopStream(String streamId) {
-        return StreamWebMapper.toStreamResponse(streamService.stopStream(streamId));
+        return streamWebMapper.toStreamResponse(streamService.stopStream(streamId));
     }
 
     @Override

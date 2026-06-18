@@ -1,15 +1,15 @@
 type: object
 required:
-  - exchange
-  - market
-  - baseAsset
-  - quoteAsset
+  - exchangeCode
+  - marketCode
+  - baseAssetCode
+  - quoteAssetCode
 properties:
-  exchange:
+  exchangeCode:
     type: string
-  market:
+  marketCode:
       type: string
-  baseAsset:
+  baseAssetCode:
     type: string
-  quoteAsset:
+  quoteAssetCode:
     type: string

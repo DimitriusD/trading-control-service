@@ -1,7 +1,6 @@
 package com.trading.control.application.service;
 
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
-import com.trading.control.application.domain.model.CreateStreamCommand;
+import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.control.application.port.input.StreamService;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 
@@ -16,22 +15,22 @@ public class StreamServiceImpl implements StreamService {
     }
 
     @Override
-    public List<ConfiguredStream> getConfiguredStreams() {
+    public List<StreamDefinition> getConfiguredStreams() {
         return marketDataStreamControlPort.listStreams();
     }
 
     @Override
-    public ConfiguredStream createStream(CreateStreamCommand command) {
-        return marketDataStreamControlPort.createStream(command);
+    public StreamDefinition createStream(StreamDefinition streamDefinition) {
+        return marketDataStreamControlPort.createStream(streamDefinition);
     }
 
     @Override
-    public ConfiguredStream startStream(String streamId) {
+    public StreamDefinition startStream(String streamId) {
         return marketDataStreamControlPort.setStreamEnabled(streamId, true);
     }
 
     @Override
-    public ConfiguredStream stopStream(String streamId) {
+    public StreamDefinition stopStream(String streamId) {
         return marketDataStreamControlPort.setStreamEnabled(streamId, false);
     }
 

@@ -1,5 +1,6 @@
-package com.trading.control.application.domain.model;
+package com.trading.control.application.domain.model.instrument;
 
+import com.trading.control.application.domain.model.Asset;
 import lombok.Builder;
 import lombok.Value;
 

@@ -1,7 +1,6 @@
 package com.trading.control.marketdata;
 
-import com.trading.control.application.domain.model.CreateStreamCommand;
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
+import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 import com.trading.mds.client.api.StreamsApi;
 import com.trading.mds.client.model.UpdateStreamEnabledRequestDto;
@@ -13,27 +12,29 @@ import java.util.List;
 public class MarketDataStreamControlAdapter implements MarketDataStreamControlPort {
 
     private final StreamsApi streamsApi;
+    private final MarketDataStreamMapper mapper;
 
-    public MarketDataStreamControlAdapter(StreamsApi streamsApi) {
+    public MarketDataStreamControlAdapter(StreamsApi streamsApi, MarketDataStreamMapper mapper) {
         this.streamsApi = streamsApi;
+        this.mapper = mapper;
     }
 
     @Override
-    public List<ConfiguredStream> listStreams() {
+    public List<StreamDefinition> listStreams() {
         return streamsApi.listStreams().stream()
-                .map(MarketDataStreamMapper::toConfiguredStream)
+                .map(mapper::toStreamDefinition)
                 .toList();
     }
 
     @Override
-    public ConfiguredStream createStream(CreateStreamCommand command) {
-        var response = streamsApi.createStream(MarketDataStreamMapper.toCreateRequest(command));
-        return MarketDataStreamMapper.toConfiguredStream(response);
+    public StreamDefinition createStream(StreamDefinition command) {
+        var response = streamsApi.createStream(mapper.toCreateRequest(command));
+        return mapper.toStreamDefinition(response);
     }
 
     @Override
-    public ConfiguredStream setStreamEnabled(String streamId, boolean enabled) {
+    public StreamDefinition setStreamEnabled(String streamId, boolean enabled) {
         var response = streamsApi.updateStreamEnabled(streamId, new UpdateStreamEnabledRequestDto().enabled(enabled));
-        return MarketDataStreamMapper.toConfiguredStream(response);
+        return mapper.toStreamDefinition(response);
     }
 }

@@ -1,19 +1,18 @@
 package com.trading.control.application.port.input;
 
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
-import com.trading.control.application.domain.model.CreateStreamCommand;
+import com.trading.control.application.domain.model.stream.StreamDefinition;
 
 import java.util.List;
 
 public interface StreamService {
 
-    List<ConfiguredStream> getConfiguredStreams();
+    List<StreamDefinition> getConfiguredStreams();
 
-    ConfiguredStream createStream(CreateStreamCommand command);
+    StreamDefinition createStream(StreamDefinition streamDefinition);
 
-    ConfiguredStream startStream(String streamId);
+    StreamDefinition startStream(String streamId);
 
-    ConfiguredStream stopStream(String streamId);
+    StreamDefinition stopStream(String streamId);
 
     void deleteStream(String streamId);
 }

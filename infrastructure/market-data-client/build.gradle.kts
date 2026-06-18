@@ -38,10 +38,13 @@ dependencies {
     api(libs.jacksonJsr310)
     api(libs.openapiJacksonNullable)
 
+    implementation(libs.mapstruct)
+
     compileOnly(libs.jakartaAnnotationApi)
     compileOnly(libs.lombok)
 
     annotationProcessor(libs.lombok)
+    annotationProcessor(libs.mapstructProcessor)
 
     openapi("com.trading.contracts:market-data-service-openapi:0.1.0-SNAPSHOT")
 }
