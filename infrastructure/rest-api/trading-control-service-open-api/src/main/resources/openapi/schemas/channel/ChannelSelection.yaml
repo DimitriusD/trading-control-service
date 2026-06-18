@@ -1,0 +1,11 @@
+type: object
+additionalProperties: false
+required:
+  - code
+properties:
+  code:
+    type: string
+  params:
+    type: array
+    items:
+      $ref: "./ChannelParamSelection.yaml"

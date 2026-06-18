@@ -13,5 +13,5 @@ public class ExchangeMarket {
     String displayName;
     boolean enabled;
     @Singular
-    List<MarketTypeDescriptor> marketTypes;
+    List<MarketType> marketTypes;
 }

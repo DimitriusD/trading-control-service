@@ -1,0 +1,18 @@
+type: object
+required:
+  - instrument_id
+  - baseAsset
+  - quoteAsset
+  - displaySymbol
+  - enabled
+properties:
+  instrument_id:
+    type: string
+  baseAsset:
+    $ref: "../asset/Asset.yaml"
+  quoteAsset:
+    $ref: "../asset/Asset.yaml"
+  displaySymbol:
+    type: string
+  enabled:
+    type: boolean

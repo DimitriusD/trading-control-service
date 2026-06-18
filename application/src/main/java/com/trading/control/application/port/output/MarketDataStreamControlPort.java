@@ -1,15 +1,14 @@
 package com.trading.control.application.port.output;
 
-import com.trading.control.application.domain.model.CreateStreamCommand;
-import com.trading.control.application.domain.model.stream.ConfiguredStream;
+import com.trading.control.application.domain.model.stream.StreamDefinition;
 
 import java.util.List;
 
 public interface MarketDataStreamControlPort {
 
-    List<ConfiguredStream> listStreams();
+    List<StreamDefinition> listStreams();
 
-    ConfiguredStream createStream(CreateStreamCommand command);
+    StreamDefinition createStream(StreamDefinition command);
 
-    ConfiguredStream setStreamEnabled(String streamId, boolean enabled);
+    StreamDefinition setStreamEnabled(String streamId, boolean enabled);
 }

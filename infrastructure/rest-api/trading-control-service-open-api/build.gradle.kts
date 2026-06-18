@@ -1,6 +1,10 @@
+import org.gradle.language.jvm.tasks.ProcessResources
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+
 plugins {
     `java-library`
     `maven-publish`
+    alias(libs.plugins.openapiGenerator)
 }
 
 group = "com.trading.contracts"
@@ -12,6 +16,28 @@ java {
     }
 
     withSourcesJar()
+}
+
+val contractDir = layout.projectDirectory.dir("src/main/resources/openapi")
+val bundledDir = layout.buildDirectory.dir("bundled-openapi")
+
+tasks.named<GenerateTask>("openApiGenerate") {
+    generatorName.set("openapi-yaml")
+    inputSpec.set(contractDir.file("openapi.yaml").asFile.absolutePath)
+    outputDir.set(bundledDir.get().asFile.absolutePath)
+    inputs.dir(contractDir)
+    outputs.dir(bundledDir)
+}
+
+tasks.named<ProcessResources>("processResources") {
+    exclude("openapi/**")
+}
+
+tasks.named<Jar>("jar") {
+    dependsOn("openApiGenerate")
+    from(bundledDir) {
+        include("openapi/openapi.yaml")
+    }
 }
 
 publishing {

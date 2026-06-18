@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.trading"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.2-SNAPSHOT"
 
 allprojects {
     repositories {

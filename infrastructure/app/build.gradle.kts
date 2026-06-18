@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":application"))
     implementation(project(":infrastructure:rest-api"))
     implementation(project(":infrastructure:market-data-client"))
+    implementation(project(":infrastructure:jdbc-storage-adapter"))
     implementation(libs.springBootStarterWeb)
     implementation(libs.springBootStarterActuator)
     implementation(libs.springBootStarterValidation)

@@ -1,0 +1,38 @@
+type: object
+required:
+  - streamId
+  - instrument
+  - channels
+  - desired
+  - runtime
+  - health
+properties:
+  streamId:
+    type: string
+  instrument:
+    $ref: './InstrumentId.yaml'
+  channels:
+    type: array
+    items:
+      $ref: "../channel/ChannelSelection.yaml"
+  desired:
+    type: string
+    enum:
+      - ENABLED
+      - DISABLED
+  runtime:
+    type: string
+    enum:
+      - RUNNING
+      - STARTING
+      - STOPPING
+      - STOPPED
+      - FAILED
+      - RECOVERING
+  health:
+    type: string
+    enum:
+      - HEALTHY
+      - WARMING_UP
+      - DEGRADED
+      - UNKNOWN

@@ -1,0 +1,17 @@
+type: object
+required:
+  - code
+  - name
+  - enabled
+  - params
+properties:
+  code:
+    type: string
+  name:
+    type: string
+  enabled:
+    type: boolean
+  params:
+    type: array
+    items:
+      $ref: "./ChannelParam.yaml"

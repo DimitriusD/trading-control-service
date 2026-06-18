@@ -1,0 +1,15 @@
+type: object
+required:
+  - exchangeCode
+  - marketCode
+  - baseAssetCode
+  - quoteAssetCode
+properties:
+  exchangeCode:
+    type: string
+  marketCode:
+      type: string
+  baseAssetCode:
+    type: string
+  quoteAssetCode:
+    type: string

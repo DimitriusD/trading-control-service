@@ -1,0 +1,17 @@
+type: object
+required:
+  - code
+  - displayName
+  - enabled
+  - channels
+properties:
+  code:
+    type: string
+  displayName:
+    type: string
+  enabled:
+    type: boolean
+  channels:
+    type: array
+    items:
+      $ref: "../channel/Channel.yaml"
