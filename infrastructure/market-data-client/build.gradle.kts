@@ -39,6 +39,8 @@ dependencies {
     api(libs.openapiJacksonNullable)
 
     implementation(libs.mapstruct)
+    implementation(libs.resilience4jSpringBoot3)
+    implementation(libs.springBootStarterAop) // brings aspectjweaver so resilience4j @Retry/@CircuitBreaker aspects activate
 
     compileOnly(libs.jakartaAnnotationApi)
     compileOnly(libs.lombok)

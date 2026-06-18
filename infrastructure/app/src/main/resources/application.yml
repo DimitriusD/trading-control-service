@@ -12,9 +12,28 @@ spring:
 
 market-data-service:
   base-url: ${MARKET_DATA_SERVICE_BASE_URL:http://localhost:8080}
+  connect-timeout: ${MARKET_DATA_SERVICE_CONNECT_TIMEOUT:2s}
+  read-timeout: ${MARKET_DATA_SERVICE_READ_TIMEOUT:5s}
+
+resilience4j:
+  retry:
+    instances:
+      market-data-read:
+        wait-duration: 200ms
+  circuitbreaker:
+    instances:
+      market-data-service:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        slow-call-duration-threshold: 4s
+        slow-call-rate-threshold: 80
+        wait-duration-in-open-state: 30s
 
 management:
   endpoints:
     web:
       exposure:
         include: "health,info,metrics"
+  health:
+    circuitbreakers:
+      enabled: true
