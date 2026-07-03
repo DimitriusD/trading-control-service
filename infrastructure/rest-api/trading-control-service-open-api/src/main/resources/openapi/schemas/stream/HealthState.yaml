@@ -1,0 +1,6 @@
+type: string
+enum:
+  - HEALTHY
+  - WARMING_UP
+  - DEGRADED
+  - UNKNOWN

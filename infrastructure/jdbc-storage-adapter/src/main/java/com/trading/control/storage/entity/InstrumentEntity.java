@@ -45,9 +45,6 @@ public class InstrumentEntity {
 
     private boolean enabled;
 
-    @Column("trading_status")
-    private String tradingStatus;
-
     @Column("price_precision")
     private Integer pricePrecision;
 

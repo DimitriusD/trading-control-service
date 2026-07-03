@@ -16,7 +16,6 @@ CREATE TABLE instruments
     description        TEXT,
 
     enabled            BOOLEAN      NOT NULL DEFAULT true,
-    trading_status     VARCHAR(32)  NOT NULL DEFAULT 'TRADING',
 
     price_precision    INTEGER,
     quantity_precision INTEGER,

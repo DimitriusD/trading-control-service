@@ -1,0 +1,11 @@
+# Server-computed actual state of a stream. Read-only; converges toward the
+# desired spec asynchronously, so it may lag right after a create/update.
+type: object
+required:
+  - runtime
+  - health
+properties:
+  runtime:
+    $ref: "./RuntimeState.yaml"
+  health:
+    $ref: "./HealthState.yaml"

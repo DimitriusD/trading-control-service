@@ -5,6 +5,9 @@ required:
 properties:
   code:
     type: string
+  enabled:
+    type: boolean
+    default: true
   params:
     type: array
     items:

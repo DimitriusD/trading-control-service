@@ -8,8 +8,11 @@ import lombok.Value;
 @Builder
 public class Instrument {
     String instrumentId;
+    String exchangeCode;
+    String marketCode;
     Asset baseAsset;
     Asset quoteAsset;
+    String exchangeSymbol;
     String displaySymbol;
     boolean enabled;
 }

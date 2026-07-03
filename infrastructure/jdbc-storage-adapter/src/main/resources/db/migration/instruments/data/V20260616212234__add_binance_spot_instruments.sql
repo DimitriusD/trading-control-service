@@ -6,8 +6,7 @@ INSERT INTO instruments (instrument_id,
                          display_symbol,
                          name,
                          description,
-                         enabled,
-                         trading_status)
+                         enabled)
 SELECT instrument_data.instrument_id,
        em.id          AS exchange_market_id,
        base_asset.id  AS base_asset_id,
@@ -16,8 +15,7 @@ SELECT instrument_data.instrument_id,
        instrument_data.display_symbol,
        instrument_data.name,
        instrument_data.description,
-       true           AS enabled,
-       'TRADING'      AS trading_status
+       true           AS enabled
 FROM (VALUES ('BINANCE|SPOT|BTC|USDT',
               'BTC',
               'USDT',
@@ -116,5 +114,4 @@ UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     enabled = EXCLUDED.enabled,
-    trading_status = EXCLUDED.trading_status,
     updated_at = CURRENT_TIMESTAMP;

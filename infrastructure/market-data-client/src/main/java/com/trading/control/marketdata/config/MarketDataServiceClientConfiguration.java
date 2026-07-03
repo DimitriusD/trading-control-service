@@ -1,4 +1,4 @@
-package com.trading.control.marketdata;
+package com.trading.control.marketdata.config;
 
 import com.trading.mds.client.api.StreamsApi;
 import com.trading.mds.client.invoker.ApiClient;
@@ -26,7 +26,7 @@ public class MarketDataServiceClientConfiguration {
                 .build();
 
         ApiClient apiClient = new ApiClient(restClient);
-        apiClient.setBasePath(properties.baseUrl());
+        apiClient.setBasePath(properties.url());
         return apiClient;
     }
 

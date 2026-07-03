@@ -1,0 +1,28 @@
+# Compact, resolved instrument identity returned to the UI and sent to MDS.
+type: object
+required:
+  - instrumentId
+  - exchangeCode
+  - marketCode
+  - baseAssetCode
+  - quoteAssetCode
+  - exchangeSymbol
+properties:
+  instrumentId:
+    type: string
+    example: "BINANCE|SPOT|BTC|USDT"
+  exchangeCode:
+    type: string
+    example: "BINANCE"
+  marketCode:
+    type: string
+    example: "SPOT"
+  baseAssetCode:
+    type: string
+    example: "BTC"
+  quoteAssetCode:
+    type: string
+    example: "USDT"
+  exchangeSymbol:
+    type: string
+    example: "BTCUSDT"

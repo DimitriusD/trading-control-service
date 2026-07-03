@@ -1,0 +1,9 @@
+type: string
+enum:
+  - UNKNOWN
+  - RUNNING
+  - STARTING
+  - STOPPING
+  - STOPPED
+  - FAILED
+  - RECOVERING

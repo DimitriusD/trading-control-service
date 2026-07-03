@@ -10,4 +10,5 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     testImplementation(libs.junitJupiter)
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }

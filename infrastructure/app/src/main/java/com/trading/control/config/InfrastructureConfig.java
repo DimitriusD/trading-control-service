@@ -5,6 +5,7 @@ import com.trading.control.application.port.input.StreamService;
 import com.trading.control.application.port.output.CatalogStorePort;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 import com.trading.control.application.service.MarketCatalogServiceImpl;
+import com.trading.control.application.service.StreamCommandValidator;
 import com.trading.control.application.service.StreamServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +19,14 @@ public class InfrastructureConfig {
     }
 
     @Bean
-    public StreamService streamUseCase(MarketDataStreamControlPort marketDataStreamControlPort) {
-        return new StreamServiceImpl(marketDataStreamControlPort);
+    public StreamCommandValidator streamCommandValidator(MarketCatalogService marketCatalogService) {
+        return new StreamCommandValidator(marketCatalogService);
+    }
+
+    @Bean
+    public StreamService streamUseCase(MarketDataStreamControlPort marketDataStreamControlPort,
+                                       MarketCatalogService marketCatalogService,
+                                       StreamCommandValidator streamCommandValidator) {
+        return new StreamServiceImpl(marketDataStreamControlPort, marketCatalogService, streamCommandValidator);
     }
 }

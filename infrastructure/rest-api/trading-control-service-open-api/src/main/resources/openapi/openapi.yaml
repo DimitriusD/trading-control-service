@@ -16,7 +16,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/market/MarketCatalogResponse.yaml"
+                type: array
+                items:
+                  $ref: "./schemas/market/Exchange.yaml"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -84,6 +86,47 @@ paths:
   /api/v1/streams/{streamId}:
     parameters:
       - $ref: "#/components/parameters/StreamId"
+    get:
+      summary: Get a stream by id
+      operationId: getStream
+      tags:
+        - streams
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/stream/StreamResponse.yaml"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      summary: Update a stream's desired spec
+      description: Set desiredState to ENABLED/DISABLED to start/stop the stream, and/or replace the channel set.
+      operationId: updateStream
+      tags:
+        - streams
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/stream/UpdateStreamRequest.yaml"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/stream/StreamResponse.yaml"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
     delete:
       summary: Delete a configured stream
       operationId: deleteStream
@@ -92,46 +135,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /api/v1/streams/{streamId}/start:
-    parameters:
-      - $ref: "#/components/parameters/StreamId"
-    post:
-      summary: Start a configured stream
-      operationId: startStream
-      tags:
-        - streams
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "./schemas/stream/StreamResponse.yaml"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /api/v1/streams/{streamId}/stop:
-    parameters:
-      - $ref: "#/components/parameters/StreamId"
-    post:
-      summary: Stop a configured stream
-      operationId: stopStream
-      tags:
-        - streams
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "./schemas/stream/StreamResponse.yaml"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":

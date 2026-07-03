@@ -1,18 +1,21 @@
-package com.trading.control.rest.mapper;
+package com.trading.control.mapper;
 
 import com.trading.control.application.domain.model.*;
 import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.chanel.ChannelParam;
 import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.instrument.Instrument;
+import com.trading.control.application.domain.model.market.ExchangeMarket;
 import com.trading.control.restapi.generated.model.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface MarketCatalogWebMapper {
 
-    MarketCatalogResponseWebDto toMarketCatalogResponse(MarketCatalog catalog);
+    List<ExchangeWebDto> toMarketCatalog(List<ExchangeMarket> exchanges);
 
     MarketInstrumentsResponseWebDto toMarketInstrumentsResponse(MarketInstruments instruments);
 

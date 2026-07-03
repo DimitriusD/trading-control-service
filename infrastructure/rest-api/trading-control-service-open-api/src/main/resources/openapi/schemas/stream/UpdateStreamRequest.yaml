@@ -1,0 +1,10 @@
+type: object
+minProperties: 1
+properties:
+  desiredState:
+    $ref: "./StreamState.yaml"
+  channels:
+    type: array
+    minItems: 1
+    items:
+      $ref: "../channel/ChannelSelection.yaml"

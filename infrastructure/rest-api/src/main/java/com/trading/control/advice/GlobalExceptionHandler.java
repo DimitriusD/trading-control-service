@@ -1,6 +1,8 @@
-package com.trading.control.rest.advice;
+package com.trading.control.advice;
 
 import com.trading.control.application.domain.exception.NotFoundException;
+import com.trading.control.application.domain.exception.ServiceUnavailableException;
+import com.trading.control.application.domain.exception.ValidationException;
 import com.trading.control.restapi.generated.model.ErrorResponseWebDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +21,26 @@ public class GlobalExceptionHandler {
     public ErrorResponseWebDto handleNotFound(NotFoundException ex) {
         var dto = new ErrorResponseWebDto();
         dto.setError("NOT_FOUND");
+        dto.setMessage(ex.getMessage());
+        dto.setTimestamp(OffsetDateTime.now());
+        return dto;
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponseWebDto handleDomainValidation(ValidationException ex) {
+        var dto = new ErrorResponseWebDto();
+        dto.setError("BAD_REQUEST");
+        dto.setMessage(ex.getMessage());
+        dto.setTimestamp(OffsetDateTime.now());
+        return dto;
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponseWebDto handleUnavailable(ServiceUnavailableException ex) {
+        var dto = new ErrorResponseWebDto();
+        dto.setError("SERVICE_UNAVAILABLE");
         dto.setMessage(ex.getMessage());
         dto.setTimestamp(OffsetDateTime.now());
         return dto;

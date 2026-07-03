@@ -4,9 +4,10 @@ import com.trading.control.application.domain.model.Asset;
 import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.chanel.ChannelParam;
 import com.trading.control.application.domain.model.chanel.ChannelParamValue;
-import com.trading.control.application.domain.model.ExchangeMarket;
+import com.trading.control.application.domain.model.market.ExchangeMarket;
+import com.trading.control.application.domain.model.catalog.ChannelCapability;
+import com.trading.control.application.domain.model.catalog.ChannelParamCapability;
 import com.trading.control.application.domain.model.instrument.Instrument;
-import com.trading.control.application.domain.model.MarketCatalog;
 import com.trading.control.application.domain.model.MarketInstruments;
 import com.trading.control.application.domain.model.MarketType;
 import com.trading.control.application.port.output.CatalogStorePort;
@@ -73,7 +74,7 @@ public class CatalogStore implements CatalogStorePort {
 
     @Override
     @Transactional(readOnly = true)
-    public MarketCatalog getMarkets() {
+    public List<ExchangeMarket> getMarkets() {
         Map<Long, MarketTypeEntity> marketTypeById = byId(marketTypes.findAll(), MarketTypeEntity::getId);
         Map<Long, ChannelEntity> channelById = byId(channels.findAll(), ChannelEntity::getId);
 
@@ -86,11 +87,10 @@ public class CatalogStore implements CatalogStorePort {
         Map<Long, List<ExchangeMarketChannelParamAllowedValueEntity>> valuesByParam = channelParamValues.findAll().stream()
                 .collect(Collectors.groupingBy(ExchangeMarketChannelParamAllowedValueEntity::getChannelParamId));
 
-        MarketCatalog.MarketCatalogBuilder catalog = MarketCatalog.builder();
 
-        exchanges.findAll().stream()
+        return exchanges.findAll().stream()
                 .sorted(Comparator.comparing(ExchangeEntity::getCode))
-                .forEach(exchange -> {
+                .map(exchange -> {
                     ExchangeMarket.ExchangeMarketBuilder market = ExchangeMarket.builder()
                             .code(exchange.getCode())
                             .displayName(exchange.getName())
@@ -113,10 +113,9 @@ public class CatalogStore implements CatalogStorePort {
                                 market.marketType(marketType.build());
                             });
 
-                    catalog.exchange(market.build());
-                });
-
-        return catalog.build();
+                    return market.build();
+                })
+                .toList();
     }
 
     @Override
@@ -142,9 +141,70 @@ public class CatalogStore implements CatalogStorePort {
 
         instruments.findByExchangeMarketId(exchangeMarket.get().getId()).stream()
                 .sorted(Comparator.comparing(InstrumentEntity::getExchangeSymbol))
-                .forEach(instrument -> builder.instrument(toInstrument(instrument, assetById)));
+                .forEach(instrument -> builder.instrument(toInstrument(instrument, assetById, exchange, marketType)));
 
         return Optional.of(builder.build());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Instrument> findInstrumentByInstrumentId(String instrumentId) {
+        return instruments.findByInstrumentId(instrumentId).map(instrument -> {
+            ExchangeMarketEntity em = exchangeMarkets.findById(instrument.getExchangeMarketId()).orElse(null);
+            String exchangeCode = em == null ? null
+                    : exchanges.findById(em.getExchangeId()).map(ExchangeEntity::getCode).orElse(null);
+            String marketCode = em == null ? null
+                    : marketTypes.findById(em.getMarketTypeId()).map(MarketTypeEntity::getCode).orElse(null);
+            Map<Long, AssetEntity> assetById = byId(assets.findAll(), AssetEntity::getId);
+
+            return toInstrument(instrument, assetById, exchangeCode, marketCode);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChannelCapability> getChannelCapabilities(String exchangeCode, String marketCode) {
+        Optional<ExchangeEntity> exchangeEntity = exchanges.findByCode(exchangeCode);
+        Optional<MarketTypeEntity> marketTypeEntity = marketTypes.findByCode(marketCode);
+        if (exchangeEntity.isEmpty() || marketTypeEntity.isEmpty()) {
+            return List.of();
+        }
+
+        Optional<ExchangeMarketEntity> exchangeMarket = exchangeMarkets.findByExchangeIdAndMarketTypeId(
+                exchangeEntity.get().getId(), marketTypeEntity.get().getId());
+        if (exchangeMarket.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, ChannelEntity> channelById = byId(channels.findAll(), ChannelEntity::getId);
+
+        return exchangeMarketChannels.findByExchangeMarketId(exchangeMarket.get().getId()).stream()
+                .map(emc -> toChannelCapability(emc, channelById))
+                .sorted(Comparator.comparing(ChannelCapability::getCode))
+                .toList();
+    }
+
+    private ChannelCapability toChannelCapability(ExchangeMarketChannelEntity emc,
+                                                  Map<Long, ChannelEntity> channelById) {
+        ChannelEntity channel = channelById.get(emc.getChannelId());
+        ChannelCapability.ChannelCapabilityBuilder builder = ChannelCapability.builder()
+                .code(channel.getCode())
+                .enabled(emc.isEnabled());
+
+        channelParams.findByExchangeMarketChannelId(emc.getId()).stream()
+                .sorted(Comparator.comparing(ExchangeMarketChannelParamEntity::getParamKey))
+                .forEach(param -> {
+                    ChannelParamCapability.ChannelParamCapabilityBuilder paramBuilder = ChannelParamCapability.builder()
+                            .key(param.getParamKey())
+                            .required(param.isRequired());
+                    channelParamValues.findByChannelParamId(param.getId()).stream()
+                            .filter(ExchangeMarketChannelParamAllowedValueEntity::isEnabled)
+                            .sorted(Comparator.comparing(ExchangeMarketChannelParamAllowedValueEntity::getSortOrder))
+                            .forEach(value -> paramBuilder.allowedValue(value.getValue()));
+                    builder.param(paramBuilder.build());
+                });
+
+        return builder.build();
     }
 
     private static Channel toChannel(ExchangeMarketChannelEntity emc,
@@ -174,11 +234,15 @@ public class CatalogStore implements CatalogStorePort {
         return builder.build();
     }
 
-    private static Instrument toInstrument(InstrumentEntity instrument, Map<Long, AssetEntity> assetById) {
+    private static Instrument toInstrument(InstrumentEntity instrument, Map<Long, AssetEntity> assetById,
+                                           String exchangeCode, String marketCode) {
         return Instrument.builder()
                 .instrumentId(instrument.getInstrumentId())
+                .exchangeCode(exchangeCode)
+                .marketCode(marketCode)
                 .baseAsset(toAsset(assetById.get(instrument.getBaseAssetId())))
                 .quoteAsset(toAsset(assetById.get(instrument.getQuoteAssetId())))
+                .exchangeSymbol(instrument.getExchangeSymbol())
                 .displaySymbol(instrument.getDisplaySymbol())
                 .enabled(instrument.isEnabled())
                 .build();

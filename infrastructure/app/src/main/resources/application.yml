@@ -1,6 +1,15 @@
 server:
   port: ${APP_PORT:8095}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics"
+  health:
+    circuitbreakers:
+      enabled: true
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/catalog
@@ -10,16 +19,22 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
-market-data-service:
-  base-url: ${MARKET_DATA_SERVICE_BASE_URL:http://localhost:8080}
-  connect-timeout: ${MARKET_DATA_SERVICE_CONNECT_TIMEOUT:2s}
-  read-timeout: ${MARKET_DATA_SERVICE_READ_TIMEOUT:5s}
+integrations:
+  api:
+    marketDataService:
+      url: ${MARKET_DATA_SERVICE_BASE_URL:http://localhost:8080}
+      connectTimeout: ${MARKET_DATA_SERVICE_CONNECT_TIMEOUT:2s}
+      readTimeout: ${MARKET_DATA_SERVICE_READ_TIMEOUT:5s}
 
 resilience4j:
   retry:
     instances:
       market-data-read:
         wait-duration: 200ms
+        # Business responses (validation / not-found) are deterministic — never retry them.
+        ignore-exceptions:
+          - com.trading.control.application.domain.exception.NotFoundException
+          - com.trading.control.application.domain.exception.ValidationException
   circuitbreaker:
     instances:
       market-data-service:
@@ -28,12 +43,7 @@ resilience4j:
         slow-call-duration-threshold: 4s
         slow-call-rate-threshold: 80
         wait-duration-in-open-state: 30s
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info,metrics"
-  health:
-    circuitbreakers:
-      enabled: true
+        # 4xx business responses must not count as downstream failures / trip the breaker.
+        ignore-exceptions:
+          - com.trading.control.application.domain.exception.NotFoundException
+          - com.trading.control.application.domain.exception.ValidationException

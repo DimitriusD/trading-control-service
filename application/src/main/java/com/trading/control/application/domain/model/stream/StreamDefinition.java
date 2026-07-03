@@ -4,7 +4,7 @@ import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.enums.StreamDesiredState;
 import com.trading.control.application.domain.model.enums.StreamHealthState;
 import com.trading.control.application.domain.model.enums.StreamRuntimeState;
-import com.trading.control.application.domain.model.instrument.InstrumentId;
+import com.trading.control.application.domain.model.instrument.StreamInstrument;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -15,10 +15,10 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class StreamDefinition {
     String streamId;
-    InstrumentId instrumentId;
+    StreamInstrument instrument;
     @Singular
     List<Channel> channels;
-    StreamDesiredState desired;
+    StreamDesiredState desiredState;
     StreamRuntimeState runtime;
     StreamHealthState health;
 }

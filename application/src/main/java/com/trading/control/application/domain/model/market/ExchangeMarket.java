@@ -1,5 +1,6 @@
-package com.trading.control.application.domain.model;
+package com.trading.control.application.domain.model.market;
 
+import com.trading.control.application.domain.model.MarketType;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;

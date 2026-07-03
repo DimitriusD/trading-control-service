@@ -5,9 +5,11 @@ import lombok.Value;
 
 @Value
 @Builder
-public class InstrumentId {
+public class StreamInstrument {
+    String instrumentId;
     String exchangeCode;
     String marketCode;
     String baseAssetCode;
     String quoteAssetCode;
+    String exchangeSymbol;
 }

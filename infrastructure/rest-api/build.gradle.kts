@@ -22,6 +22,9 @@ dependencies {
 
     annotationProcessor(libs.mapstructProcessor)
     annotationProcessor(libs.lombok)
+
+    testImplementation(libs.junitJupiter)
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 val openApiGeneratedDir = layout.buildDirectory.dir("generated/openapi")
@@ -32,6 +35,8 @@ val openApiContractDir = project(":infrastructure:rest-api:trading-control-servi
 
 tasks.named<GenerateTask>("openApiGenerate") {
     generatorName.set("spring")
+    // Track every schema file, not just the root, so edits to $ref'd schemas re-trigger generation.
+    inputs.dir(openApiContractDir)
     inputSpec.set(openApiContractDir.resolve("openapi.yaml").absolutePath)
     outputDir.set(openApiGeneratedDir.get().asFile.absolutePath)
     apiPackage.set("com.trading.control.restapi.generated.api")

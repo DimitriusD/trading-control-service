@@ -2,37 +2,20 @@ type: object
 required:
   - streamId
   - instrument
+  - desiredState
   - channels
-  - desired
-  - runtime
-  - health
+  - status
 properties:
   streamId:
     type: string
+    example: "binance-spot-btc-usdt"
   instrument:
-    $ref: './InstrumentId.yaml'
+    $ref: "./StreamInstrument.yaml"
+  desiredState:
+    $ref: "./StreamState.yaml"
   channels:
     type: array
     items:
       $ref: "../channel/ChannelSelection.yaml"
-  desired:
-    type: string
-    enum:
-      - ENABLED
-      - DISABLED
-  runtime:
-    type: string
-    enum:
-      - RUNNING
-      - STARTING
-      - STOPPING
-      - STOPPED
-      - FAILED
-      - RECOVERING
-  health:
-    type: string
-    enum:
-      - HEALTHY
-      - WARMING_UP
-      - DEGRADED
-      - UNKNOWN
+  status:
+    $ref: "./StreamStatus.yaml"

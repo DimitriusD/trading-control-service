@@ -48,7 +48,10 @@ dependencies {
     annotationProcessor(libs.lombok)
     annotationProcessor(libs.mapstructProcessor)
 
-    openapi("com.trading.contracts:market-data-service-openapi:0.1.0-SNAPSHOT")
+    testImplementation(libs.junitJupiter)
+    testRuntimeOnly(libs.junitPlatformLauncher)
+
+    openapi("com.trading.contracts:market-data-service-openapi:1.0.0-SNAPSHOT")
 }
 
 val extractedOpenApiDir = layout.buildDirectory.dir("openapi/contracts/market-data-service")
@@ -69,6 +72,7 @@ tasks.named<GenerateTask>("openApiGenerate") {
 
     generatorName.set("java")
     library.set("restclient")
+    cleanupOutput.set(true) // wipe stale generated files so removed contract schemas don't linger
     inputSpec.set(extractedOpenApiDir.map { it.file("openapi/openapi.yaml").asFile.absolutePath })
     outputDir.set(openApiGeneratedDir.get().asFile.absolutePath)
     apiPackage.set("com.trading.mds.client.api")
