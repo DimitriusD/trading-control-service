@@ -1,6 +1,6 @@
 # Create-or-replace a stream by selecting a catalog instrument. The UI sends the
 # canonical instrumentId; control-service resolves the full instrument identity
-# from its local catalog before forwarding to market-data-service.
+# from market-catalog-service before forwarding to market-data-service.
 type: object
 required:
   - instrumentId

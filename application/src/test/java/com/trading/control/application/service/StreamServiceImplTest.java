@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class StreamServiceImplTest {
 
-    private final CatalogFixtures.FakeCatalogStore catalog = new CatalogFixtures.FakeCatalogStore();
+    private final CatalogFixtures.FakeMarketCatalog catalog = new CatalogFixtures.FakeMarketCatalog();
     private final CatalogFixtures.CapturingControlPort port = new CatalogFixtures.CapturingControlPort();
     private StreamServiceImpl service;
 
@@ -25,10 +25,7 @@ class StreamServiceImplTest {
     void setUp() {
         catalog.instrument = CatalogFixtures.tradingInstrument().build();
         catalog.capabilities = CatalogFixtures.binanceSpotCapabilities();
-        MarketCatalogServiceImpl catalogService = new MarketCatalogServiceImpl(catalog);
-        service = new StreamServiceImpl(port,
-                catalogService,
-                new StreamCommandValidator(catalogService));
+        service = new StreamServiceImpl(port, catalog, new StreamCommandValidator(catalog));
     }
 
     @Test
@@ -63,6 +60,19 @@ class StreamServiceImplTest {
 
         assertThrows(NotFoundException.class, () -> service.createStream(command));
         org.junit.jupiter.api.Assertions.assertEquals(null, port.createdDefinition);
+    }
+
+    @Test
+    void createRejectsBlankInstrumentIdWithoutCallingCatalog() {
+        catalog.instrument = null;
+        CreateStreamCommand command = CreateStreamCommand.builder()
+                .instrumentId("  ")
+                .desiredState(StreamDesiredState.ENABLED)
+                .channels(List.of(CatalogFixtures.channel("TRADE")))
+                .build();
+
+        assertThrows(com.trading.control.application.domain.exception.ValidationException.class,
+                () -> service.createStream(command));
     }
 
     @Test

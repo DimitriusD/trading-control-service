@@ -1,7 +1,8 @@
-package com.trading.control.marketdata.config;
+package com.trading.control.marketcatalog.config;
 
-import com.trading.mds.client.api.StreamsApi;
-import com.trading.mds.client.invoker.ApiClient;
+import com.trading.catalog.client.api.InstrumentsApi;
+import com.trading.catalog.client.api.MarketsApi;
+import com.trading.catalog.client.invoker.ApiClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpClientSettings;
@@ -11,11 +12,11 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-@EnableConfigurationProperties(MarketDataServiceClientProperties.class)
-public class MarketDataServiceClientConfiguration {
+@EnableConfigurationProperties(MarketCatalogServiceClientProperties.class)
+public class MarketCatalogServiceClientConfiguration {
 
     @Bean
-    ApiClient marketDataServiceApiClient(MarketDataServiceClientProperties properties) {
+    ApiClient marketCatalogServiceApiClient(MarketCatalogServiceClientProperties properties) {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
         ClientHttpRequestFactory requestFactory = ClientHttpRequestFactoryBuilder.detect().build(settings);
@@ -30,7 +31,12 @@ public class MarketDataServiceClientConfiguration {
     }
 
     @Bean
-    StreamsApi marketDataStreamsApi(ApiClient marketDataServiceApiClient) {
-        return new StreamsApi(marketDataServiceApiClient);
+    InstrumentsApi marketCatalogInstrumentsApi(ApiClient marketCatalogServiceApiClient) {
+        return new InstrumentsApi(marketCatalogServiceApiClient);
+    }
+
+    @Bean
+    MarketsApi marketCatalogMarketsApi(ApiClient marketCatalogServiceApiClient) {
+        return new MarketsApi(marketCatalogServiceApiClient);
     }
 }

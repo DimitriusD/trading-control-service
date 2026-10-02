@@ -50,23 +50,23 @@ dependencies {
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
 
-    openapi("com.trading.contracts:market-data-service-openapi:1.0.0-SNAPSHOT")
+    openapi("com.trading.contracts:market-catalog-service-openapi:0.1.0-SNAPSHOT")
 }
 
-val extractedOpenApiDir = layout.buildDirectory.dir("openapi/contracts/market-data-service")
+val extractedOpenApiDir = layout.buildDirectory.dir("openapi/contracts/market-catalog-service")
 
-val extractMarketDataOpenApiContract by tasks.registering(Sync::class) {
+val extractMarketCatalogOpenApiContract by tasks.registering(Sync::class) {
     group = "openapi"
-    description = "Extracts the market-data-service OpenAPI YAML contract from the published JAR"
+    description = "Extracts the market-catalog-service OpenAPI YAML contract from the published JAR"
 
     from(openapi.elements.map { artifacts -> artifacts.map { zipTree(it.asFile) } })
     into(extractedOpenApiDir)
 }
 
-val openApiGeneratedDir = layout.buildDirectory.dir("generated/market-data-client")
+val openApiGeneratedDir = layout.buildDirectory.dir("generated/market-catalog-client")
 
 tasks.named<GenerateTask>("openApiGenerate") {
-    dependsOn(extractMarketDataOpenApiContract)
+    dependsOn(extractMarketCatalogOpenApiContract)
     inputs.dir(extractedOpenApiDir)
 
     generatorName.set("java")
@@ -74,9 +74,9 @@ tasks.named<GenerateTask>("openApiGenerate") {
     cleanupOutput.set(true) // wipe stale generated files so removed contract schemas don't linger
     inputSpec.set(extractedOpenApiDir.map { it.file("openapi/openapi.yaml") })
     outputDir.set(openApiGeneratedDir.get().asFile.absolutePath)
-    apiPackage.set("com.trading.mds.client.api")
-    modelPackage.set("com.trading.mds.client.model")
-    invokerPackage.set("com.trading.mds.client.invoker")
+    apiPackage.set("com.trading.catalog.client.api")
+    modelPackage.set("com.trading.catalog.client.model")
+    invokerPackage.set("com.trading.catalog.client.invoker")
     modelNameSuffix.set("Dto")
     configOptions.set(
         mapOf(

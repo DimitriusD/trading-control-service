@@ -14,9 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StreamCommandValidatorTest {
 
-    private final CatalogFixtures.FakeCatalogStore catalog = new CatalogFixtures.FakeCatalogStore();
+    private final CatalogFixtures.FakeMarketCatalog catalog = new CatalogFixtures.FakeMarketCatalog();
     private final StreamCommandValidator validator =
-            new StreamCommandValidator(new MarketCatalogServiceImpl(catalog));
+            new StreamCommandValidator(catalog);
 
     @BeforeEach
     void setUp() {
@@ -36,47 +36,48 @@ class StreamCommandValidatorTest {
 
     @Test
     void rejectsDisabledInstrument() {
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().enabled(false).build(),
-                List.of(CatalogFixtures.channel("TRADE"))));
+        var instrument = instrument().enabled(false).build();
+        var channels = List.of(CatalogFixtures.channel("TRADE"));
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("not enabled"));
     }
 
     @Test
     void rejectsEmptyChannels() {
-        assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(), List.of()));
+        var instrument = instrument().build();
+        List<Channel> channels = List.of();
+        assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
     }
 
     @Test
     void rejectsDuplicateChannels() {
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(),
-                List.of(CatalogFixtures.channel("TRADE"), CatalogFixtures.channel("TRADE"))));
+        var instrument = instrument().build();
+        var channels = List.of(CatalogFixtures.channel("TRADE"), CatalogFixtures.channel("TRADE"));
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("duplicate"));
     }
 
     @Test
     void rejectsUnsupportedChannel() {
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(),
-                List.of(CatalogFixtures.channel("KLINE"))));
+        var instrument = instrument().build();
+        var channels = List.of(CatalogFixtures.channel("KLINE"));
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("unsupported"));
     }
 
     @Test
     void rejectsMissingRequiredUpdateSpeed() {
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(),
-                List.of(CatalogFixtures.depthDiff(null))));
+        var instrument = instrument().build();
+        var channels = List.of(CatalogFixtures.depthDiff(null));
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("updateSpeed"));
     }
 
     @Test
     void rejectsInvalidUpdateSpeed() {
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(),
-                List.of(CatalogFixtures.depthDiff("500ms"))));
+        var instrument = instrument().build();
+        var channels = List.of(CatalogFixtures.depthDiff("500ms"));
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("invalid value"));
     }
 
@@ -89,8 +90,9 @@ class StreamCommandValidatorTest {
                                 .value("x").build())
                         .build())
                 .build();
-        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(
-                instrument().build(), List.of(tradeWithBogusParam)));
+        var instrument = instrument().build();
+        var channels = List.of(tradeWithBogusParam);
+        var ex = assertThrows(ValidationException.class, () -> validator.validateCreate(instrument, channels));
         assertTrue(ex.getMessage().contains("unknown param"));
     }
 

@@ -7,7 +7,7 @@ import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.chanel.ChannelParam;
 import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.instrument.Instrument;
-import com.trading.control.application.port.input.MarketCatalogService;
+import com.trading.control.application.port.output.MarketCatalogPort;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 
 public class StreamCommandValidator {
 
-    private final MarketCatalogService marketCatalogService;
+    private final MarketCatalogPort marketCatalogPort;
 
-    public StreamCommandValidator(MarketCatalogService marketCatalogService) {
-        this.marketCatalogService = marketCatalogService;
+    public StreamCommandValidator(MarketCatalogPort marketCatalogPort) {
+        this.marketCatalogPort = marketCatalogPort;
     }
 
     public void validateCreate(Instrument instrument, List<Channel> channels) {
@@ -40,10 +40,6 @@ public class StreamCommandValidator {
         }
     }
 
-    /**
-     * Validates a channel set against an existing stream's exchange/market — used
-     * for PATCH, where the instrument is already fixed.
-     */
     public void validateChannels(String exchangeCode, String marketCode, List<Channel> channels) {
         List<String> errors = new ArrayList<>();
         validateChannelsInto(exchangeCode, marketCode, channels, errors);
@@ -59,7 +55,7 @@ public class StreamCommandValidator {
             return;
         }
 
-        Map<String, ChannelCapability> capabilities = marketCatalogService
+        Map<String, ChannelCapability> capabilities = marketCatalogPort
                 .getChannelCapabilities(exchangeCode, marketCode).stream()
                 .collect(Collectors.toMap(ChannelCapability::getCode, Function.identity(), (a, b) -> a));
 
@@ -96,14 +92,12 @@ public class StreamCommandValidator {
             provided.put(param.getKey(), selectedValue(param));
         }
 
-        // Reject params the channel does not know about.
         for (String key : provided.keySet()) {
             if (!paramCaps.containsKey(key)) {
                 errors.add("unknown param '" + key + "' for channel " + code);
             }
         }
 
-        // Required params must be present; provided values must be allowed.
         for (ChannelParamCapability paramCap : capability.getParams()) {
             String value = provided.get(paramCap.getKey());
             if (paramCap.isRequired() && (value == null || value.isBlank())) {

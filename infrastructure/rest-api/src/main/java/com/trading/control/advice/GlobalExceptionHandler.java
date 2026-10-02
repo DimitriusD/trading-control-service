@@ -4,46 +4,42 @@ import com.trading.control.application.domain.exception.NotFoundException;
 import com.trading.control.application.domain.exception.ServiceUnavailableException;
 import com.trading.control.application.domain.exception.ValidationException;
 import com.trading.control.restapi.generated.model.ErrorResponseWebDto;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@AllArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final Clock clock;
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponseWebDto handleNotFound(NotFoundException ex) {
-        var dto = new ErrorResponseWebDto();
-        dto.setError("NOT_FOUND");
-        dto.setMessage(ex.getMessage());
-        dto.setTimestamp(OffsetDateTime.now());
-        return dto;
+        return error(HttpStatus.NOT_FOUND.name(), ex.getMessage());
     }
 
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponseWebDto handleDomainValidation(ValidationException ex) {
-        var dto = new ErrorResponseWebDto();
-        dto.setError("BAD_REQUEST");
-        dto.setMessage(ex.getMessage());
-        dto.setTimestamp(OffsetDateTime.now());
-        return dto;
+        return error(HttpStatus.BAD_REQUEST.name(), ex.getMessage());
     }
 
     @ExceptionHandler(ServiceUnavailableException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public ErrorResponseWebDto handleUnavailable(ServiceUnavailableException ex) {
-        var dto = new ErrorResponseWebDto();
-        dto.setError("SERVICE_UNAVAILABLE");
-        dto.setMessage(ex.getMessage());
-        dto.setTimestamp(OffsetDateTime.now());
-        return dto;
+        return error(HttpStatus.SERVICE_UNAVAILABLE.name(), ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,20 +48,32 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + " " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        var dto = new ErrorResponseWebDto();
-        dto.setError("BAD_REQUEST");
-        dto.setMessage(message.isEmpty() ? "Validation failed" : message);
-        dto.setTimestamp(OffsetDateTime.now());
-        return dto;
+        return error(HttpStatus.BAD_REQUEST.name(), message.isEmpty() ? "Validation failed" : message);
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponseWebDto handleUnexpected(Exception ex) {
+    public ResponseEntity<ErrorResponseWebDto> handleUnexpected(Exception ex) {
+        if (ex instanceof ErrorResponse errorResponse) {
+            return handleFrameworkError(errorResponse);
+        }
+        return ResponseEntity.internalServerError()
+                .body(error(HttpStatus.INTERNAL_SERVER_ERROR.name(), "An unexpected error occurred"));
+    }
+
+    private ResponseEntity<ErrorResponseWebDto> handleFrameworkError(ErrorResponse errorResponse) {
+        HttpStatusCode status = errorResponse.getStatusCode();
+        HttpStatus resolved = HttpStatus.resolve(status.value());
+        String code = resolved != null ? resolved.name() : String.valueOf(status.value());
+        return ResponseEntity.status(status)
+                .headers(errorResponse.getHeaders())
+                .body(error(code, errorResponse.getBody().getDetail()));
+    }
+
+    private ErrorResponseWebDto error(String code, String message) {
         var dto = new ErrorResponseWebDto();
-        dto.setError("INTERNAL_SERVER_ERROR");
-        dto.setMessage("An unexpected error occurred");
-        dto.setTimestamp(OffsetDateTime.now());
+        dto.setError(code);
+        dto.setMessage(message);
+        dto.setTimestamp(OffsetDateTime.now(clock));
         return dto;
     }
 }

@@ -4,45 +4,6 @@ info:
   version: 1.0.0
 
 paths:
-  /api/v1/markets:
-    get:
-      summary: Get supported markets and stream channel capabilities
-      operationId: getMarkets
-      tags:
-        - markets
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "./schemas/market/Exchange.yaml"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /api/v1/markets/{exchange}/{marketType}/instruments:
-    parameters:
-      - $ref: "#/components/parameters/Exchange"
-      - $ref: "#/components/parameters/MarketType"
-    get:
-      summary: Get instruments for a given exchange and market type
-      operationId: getMarketInstruments
-      tags:
-        - markets
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "./schemas/instrument/MarketInstrumentsResponse.yaml"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
   /api/v1/streams:
     get:
       summary: Get configured streams
@@ -142,18 +103,6 @@ paths:
 
 components:
   parameters:
-    Exchange:
-      name: exchange
-      in: path
-      required: true
-      schema:
-        type: string
-    MarketType:
-      name: marketType
-      in: path
-      required: true
-      schema:
-        type: string
     StreamId:
       name: streamId
       in: path

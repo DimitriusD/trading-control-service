@@ -41,7 +41,7 @@ A Spring Boot microservice template following **hexagonal architecture** (ports 
 ## Tech Stack
 
 - Java 21
-- Spring Boot 3.3.x
+- Spring Boot 4.1.x (Jackson 3)
 - Gradle 9.x (Kotlin DSL)
 - PostgreSQL 17
 - Apache Kafka
@@ -208,13 +208,48 @@ CI may instead supply `GITHUB_ACTOR`/`GITHUB_USERNAME` and `GITHUB_TOKEN` env va
 Bump the version in the `openapi(...)` dependency in
 `infrastructure/market-data-client/build.gradle.kts` once a new contract is published.
 
+## Consuming the market-catalog-service contract
+
+The market catalog (markets, channels, instruments) lives in `market-catalog-service`; this service
+has no database. `infrastructure/market-catalog-client` generates a Java client the same way as
+`market-data-client`, from `com.trading.contracts:market-catalog-service-openapi:0.1.0-SNAPSHOT`
+(Maven Local, then GitHub Packages). `MarketCatalogAdapter` implements the `MarketCatalogPort` output
+port, used to resolve the instrument of a new stream and to validate channels/params.
+
+Refresh after a catalog contract change:
+
+```bash
+# in market-catalog-service
+./gradlew :infrastructure:rest-api:market-catalog-service-open-api:publishToMavenLocal
+# here
+./gradlew build --refresh-dependencies
+```
+
+## Container image
+
+The build pulls OpenAPI contracts from GitHub Packages, so the image needs a `read:packages` token,
+passed as a BuildKit secret (it does not end up in image layers). Contracts must be published to
+GitHub Packages (`publish`, not only `publishToMavenLocal`), since Maven Local is not visible inside Docker.
+
+```bash
+GPR_USER=DimitriusD GPR_KEY=<PAT> docker build \
+  --secret id=gpr_user,env=GPR_USER --secret id=gpr_key,env=GPR_KEY \
+  -t trading-control-service:local .
+```
+
+`.github/workflows/ci.yml` runs `./gradlew build`, then builds the image and pushes it to
+`ghcr.io/dimitriusd/trading-control-service`. It needs a repository secret `GPR_TOKEN`
+(PAT classic with `read:packages`) to resolve the contracts.
+
+| Trigger | Tags |
+|---|---|
+| push to `master` | `latest`, `sha-<short>` |
+| tag `v1.2.3` | `1.2.3`, `1.2`, `sha-<short>` |
+| pull request | built only, not pushed |
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MARKET_DATA_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL of the remote market-data-service |
-| `APP_DB_URL` | `jdbc:postgresql://localhost:5432/appdb` | Database URL |
-| `APP_DB_USERNAME` | `appuser` | Database username |
-| `APP_DB_PASSWORD` | `apppass` | Database password |
-| `APP_KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka brokers |
-| `APP_KAFKA_TOPIC_ITEM_EVENTS` | `service.item.events.v1` | Kafka topic for item events |
+| `MARKET_CATALOG_SERVICE_BASE_URL` | `http://localhost:8097` | Base URL of the remote market-catalog-service |

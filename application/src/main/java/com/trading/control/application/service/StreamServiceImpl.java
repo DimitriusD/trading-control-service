@@ -1,12 +1,13 @@
 package com.trading.control.application.service;
 
+import com.trading.control.application.domain.exception.ValidationException;
 import com.trading.control.application.domain.model.instrument.Instrument;
 import com.trading.control.application.domain.model.instrument.StreamInstrument;
 import com.trading.control.application.domain.model.stream.CreateStreamCommand;
 import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.control.application.domain.model.stream.StreamPatch;
-import com.trading.control.application.port.input.MarketCatalogService;
 import com.trading.control.application.port.input.StreamService;
+import com.trading.control.application.port.output.MarketCatalogPort;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 import lombok.AllArgsConstructor;
 
@@ -16,7 +17,7 @@ import java.util.List;
 public class StreamServiceImpl implements StreamService {
 
     private final MarketDataStreamControlPort marketDataStreamControlPort;
-    private final MarketCatalogService marketCatalogService;
+    private final MarketCatalogPort marketCatalogPort;
     private final StreamCommandValidator commandValidator;
 
     @Override
@@ -31,7 +32,11 @@ public class StreamServiceImpl implements StreamService {
 
     @Override
     public StreamDefinition createStream(CreateStreamCommand command) {
-        Instrument instrument = marketCatalogService.getInstrument(command.getInstrumentId());
+        String instrumentId = command.getInstrumentId();
+        if (instrumentId == null || instrumentId.isBlank()) {
+            throw new ValidationException("instrumentId must not be blank");
+        }
+        Instrument instrument = marketCatalogPort.getInstrument(instrumentId);
         commandValidator.validateCreate(instrument, command.getChannels());
 
         StreamDefinition definition = StreamDefinition.builder()

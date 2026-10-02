@@ -45,7 +45,10 @@ tasks.named<GenerateTask>("openApiGenerate") {
     configOptions.set(
         mapOf(
             "interfaceOnly" to "true",
-            "useSpringBoot3" to "true",
+            "useSpringBoot4" to "true",
+            "useJackson3" to "true",
+            "generateJsonIncludeAnnotations" to "false",
+            "generateJsonSetterNullsAnnotations" to "false",
             "dateLibrary" to "java8",
             "useTags" to "true",
             "skipDefaultInterface" to "true",

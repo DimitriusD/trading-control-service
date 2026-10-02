@@ -1,21 +1,19 @@
 package com.trading.control.application.service;
 
+import com.trading.control.application.domain.exception.NotFoundException;
 import com.trading.control.application.domain.model.Asset;
-import com.trading.control.application.domain.model.MarketInstruments;
 import com.trading.control.application.domain.model.catalog.ChannelCapability;
 import com.trading.control.application.domain.model.catalog.ChannelParamCapability;
 import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.chanel.ChannelParam;
 import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.instrument.Instrument;
-import com.trading.control.application.domain.model.market.ExchangeMarket;
 import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.control.application.domain.model.stream.StreamPatch;
-import com.trading.control.application.port.output.CatalogStorePort;
+import com.trading.control.application.port.output.MarketCatalogPort;
 import com.trading.control.application.port.output.MarketDataStreamControlPort;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Shared test data and configurable fakes for the stream service unit tests.
@@ -66,25 +64,17 @@ final class CatalogFixtures {
         return builder.build();
     }
 
-    /** Configurable catalog store: one instrument + a fixed capability set. */
-    static final class FakeCatalogStore implements CatalogStorePort {
+    /** Configurable market catalog: one instrument + a fixed capability set. */
+    static final class FakeMarketCatalog implements MarketCatalogPort {
         Instrument instrument;
         List<ChannelCapability> capabilities = List.of();
 
         @Override
-        public List<ExchangeMarket> getMarkets() {
-            return List.of();
-        }
-
-        @Override
-        public Optional<MarketInstruments> getInstruments(String exchange, String marketType) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Instrument> findInstrumentByInstrumentId(String instrumentId) {
-            return Optional.ofNullable(instrument)
-                    .filter(i -> i.getInstrumentId().equals(instrumentId));
+        public Instrument getInstrument(String instrumentId) {
+            if (instrument == null || !instrument.getInstrumentId().equals(instrumentId)) {
+                throw new NotFoundException("Instrument not found: " + instrumentId);
+            }
+            return instrument;
         }
 
         @Override
