@@ -4,6 +4,123 @@ info:
   version: 1.0.0
 
 paths:
+  /api/v1/catalog:
+    get:
+      summary: Get the compact catalog used to build the stream form
+      description: |
+        Exchanges, their markets, channels and parameter rules, proxied from market-catalog-service.
+        Only available options are returned. Instruments are loaded separately via `GET /api/v1/instruments`.
+      operationId: getCatalog
+      tags:
+        - catalog
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/catalog/Catalog.yaml"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/instruments:
+    get:
+      summary: Search available instruments of a market
+      description: |
+        Returns enabled instruments of an available market, ordered by exchange symbol.
+        Pass `nextCursor` from the previous page as `cursor` to get the next page.
+      operationId: searchInstruments
+      tags:
+        - instruments
+      parameters:
+        - name: exchangeCode
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "BINANCE"
+        - name: marketCode
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "SPOT"
+        - name: searchText
+          in: query
+          required: false
+          description: Case-insensitive substring of the exchange symbol, display symbol or base asset name.
+          schema:
+            type: string
+            maxLength: 100
+            example: "BTC"
+        - name: baseAssetCode
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "BTC"
+        - name: quoteAssetCode
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "USDT"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor returned as `nextCursor` by the previous page.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/instrument/InstrumentPage.yaml"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/instruments/{instrumentId}:
+    parameters:
+      - $ref: "#/components/parameters/InstrumentId"
+    get:
+      summary: Get an instrument by its canonical id
+      description: "`enabled` is false when the instrument, its market or its exchange is disabled."
+      operationId: getInstrument
+      tags:
+        - instruments
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/instrument/Instrument.yaml"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
   /api/v1/streams:
     get:
       summary: Get configured streams
@@ -109,6 +226,14 @@ components:
       required: true
       schema:
         type: string
+    InstrumentId:
+      name: instrumentId
+      in: path
+      required: true
+      description: Canonical instrument id; `|` must be URL-encoded (`BINANCE%7CSPOT%7CBTC%7CUSDT`).
+      schema:
+        type: string
+        example: "BINANCE|SPOT|BTC|USDT"
 
   responses:
     BadRequest:
@@ -125,6 +250,12 @@ components:
             $ref: "./schemas/error/ErrorResponse.yaml"
     InternalError:
       description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "./schemas/error/ErrorResponse.yaml"
+    ServiceUnavailable:
+      description: A downstream service is unavailable
       content:
         application/json:
           schema:

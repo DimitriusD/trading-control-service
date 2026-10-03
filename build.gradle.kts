@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.trading"
-version = "0.1.3-SNAPSHOT"
+version = "0.2.0-SNAPSHOT"
 
 allprojects {
     repositories {
@@ -22,6 +22,10 @@ subprojects {
                 languageVersion.set(JavaLanguageVersion.of(21))
             }
         }
+    }
+
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-parameters")
     }
 
     tasks.withType<Test> {

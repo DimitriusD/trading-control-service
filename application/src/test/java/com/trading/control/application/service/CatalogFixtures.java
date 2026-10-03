@@ -2,12 +2,15 @@ package com.trading.control.application.service;
 
 import com.trading.control.application.domain.exception.NotFoundException;
 import com.trading.control.application.domain.model.Asset;
+import com.trading.control.application.domain.model.catalog.Catalog;
 import com.trading.control.application.domain.model.catalog.ChannelCapability;
 import com.trading.control.application.domain.model.catalog.ChannelParamCapability;
 import com.trading.control.application.domain.model.chanel.Channel;
 import com.trading.control.application.domain.model.chanel.ChannelParam;
 import com.trading.control.application.domain.model.chanel.ChannelParamValue;
 import com.trading.control.application.domain.model.instrument.Instrument;
+import com.trading.control.application.domain.model.instrument.InstrumentPage;
+import com.trading.control.application.domain.model.instrument.InstrumentSearchQuery;
 import com.trading.control.application.domain.model.stream.StreamDefinition;
 import com.trading.control.application.domain.model.stream.StreamPatch;
 import com.trading.control.application.port.output.MarketCatalogPort;
@@ -68,6 +71,16 @@ final class CatalogFixtures {
     static final class FakeMarketCatalog implements MarketCatalogPort {
         Instrument instrument;
         List<ChannelCapability> capabilities = List.of();
+
+        @Override
+        public Catalog getCatalog() {
+            return new Catalog(List.of());
+        }
+
+        @Override
+        public InstrumentPage searchInstruments(InstrumentSearchQuery query) {
+            return new InstrumentPage(instrument == null ? List.of() : List.of(instrument), null);
+        }
 
         @Override
         public Instrument getInstrument(String instrumentId) {

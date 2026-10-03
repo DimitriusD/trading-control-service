@@ -1,20 +1,15 @@
-package com.trading.control.application.port.output;
+package com.trading.control.application.port.input;
 
 import com.trading.control.application.domain.model.catalog.Catalog;
-import com.trading.control.application.domain.model.catalog.ChannelCapability;
 import com.trading.control.application.domain.model.instrument.Instrument;
 import com.trading.control.application.domain.model.instrument.InstrumentPage;
 import com.trading.control.application.domain.model.instrument.InstrumentSearchQuery;
 
-import java.util.List;
-
-public interface MarketCatalogPort {
+public interface MarketCatalogService {
 
     Catalog getCatalog();
 
     InstrumentPage searchInstruments(InstrumentSearchQuery query);
 
     Instrument getInstrument(String instrumentId);
-
-    List<ChannelCapability> getChannelCapabilities(String exchangeCode, String marketCode);
 }

@@ -1,5 +1,6 @@
 package com.trading.control.marketcatalog.config;
 
+import com.trading.catalog.client.api.CatalogApi;
 import com.trading.catalog.client.api.InstrumentsApi;
 import com.trading.catalog.client.api.MarketsApi;
 import com.trading.catalog.client.invoker.ApiClient;
@@ -28,6 +29,11 @@ public class MarketCatalogServiceClientConfiguration {
         ApiClient apiClient = new ApiClient(restClient);
         apiClient.setBasePath(properties.url());
         return apiClient;
+    }
+
+    @Bean
+    CatalogApi marketCatalogCatalogApi(ApiClient marketCatalogServiceApiClient) {
+        return new CatalogApi(marketCatalogServiceApiClient);
     }
 
     @Bean

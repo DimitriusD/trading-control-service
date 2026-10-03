@@ -1,245 +1,109 @@
-# Hexagonal Service Template
+# Trading Control Service
 
-A Spring Boot microservice template following **hexagonal architecture** (ports & adapters) with Gradle multi-module setup.
+Backend for the trading UI (BFF): the UI talks only to this service. It serves the market catalog and
+instrument search by proxying `market-catalog-service`, and manages stream configurations: resolves the
+instrument and validates channels against the catalog, then forwards the stream spec to
+`market-data-service`, which runs the streams.
 
-## Architecture
+The service has no database: the catalog lives in `market-catalog-service`, stream state in `market-data-service`.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    infrastructure/app                            │
-│              (Spring Boot, wiring, composition)                  │
-├──────────┬──────────────────┬──────────────┬────────────────────┤
-│ rest-api │ jdbc-storage-    │ event-       │  (your custom      │
-│ (HTTP    │ adapter          │ adapter      │   adapters...)      │
-│  driving │ (Postgres driven │ (Kafka driven│                    │
-│  adapter)│  adapter)        │  adapter)    │                    │
-├──────────┴──────────────────┴──────────────┴────────────────────┤
-│                        application                               │
-│     domain/model  │  port/input  │  port/output  │  service     │
-│     domain/exception                                             │
-└─────────────────────────────────────────────────────────────────┘
-```
+Hexagonal layout (ports & adapters), Gradle multi-module.
 
-### Modules
+## Modules
 
 | Module | Purpose |
 |--------|---------|
-| `application` | Domain models, input/output ports (interfaces), application services. No framework dependencies. |
-| `infrastructure/app` | Spring Boot entrypoint. Wires ports to adapter implementations via `InfrastructureConfig`. |
-| `infrastructure/rest-api` | HTTP driving adapter. OpenAPI-first code generation + hand-written controllers and MapStruct mappers. |
-| `infrastructure/jdbc-storage-adapter` | PostgreSQL persistence via Spring Data JDBC. Flyway migrations. |
-| `infrastructure/event-adapter` | Kafka event publishing. Implements output ports for domain events. |
+| `application` | Domain models, input ports `StreamService` / `MarketCatalogService`, output ports `MarketCatalogPort` / `MarketDataStreamControlPort`, their implementations and `StreamCommandValidator`. No framework dependencies. |
+| `infrastructure/app` | Spring Boot entrypoint and wiring (`InfrastructureConfig`). |
+| `infrastructure/rest-api` | `StreamsController`, `CatalogController`, `InstrumentsController` and MapStruct mappers over interfaces generated from the contract. |
+| `infrastructure/rest-api/trading-control-service-open-api` | The OpenAPI contract, published as `com.trading.contracts:trading-control-service-openapi`. |
+| `infrastructure/market-catalog-client` | `MarketCatalogAdapter`: client generated from `market-catalog-service-openapi`. |
+| `infrastructure/market-data-client` | `MarketDataStreamControlAdapter`: client generated from `market-data-service-openapi`. |
 
-### Key patterns
+## API
 
-- **Ports & Adapters**: domain logic in `application` depends on nothing; adapters implement ports
-- **OpenAPI-first**: REST API defined in `openapi.yaml`, interfaces generated at build time
-- **MapStruct**: type-safe mapping between layers (web DTOs <-> domain <-> entities)
-- **Flyway**: versioned database migrations
-- **Version catalog**: all dependency versions centralized in `gradle/libs.versions.toml`
-
-## Tech Stack
-
-- Java 21
-- Spring Boot 4.1.x (Jackson 3)
-- Gradle 9.x (Kotlin DSL)
-- PostgreSQL 17
-- Apache Kafka
-- Flyway
-- MapStruct + Lombok
-- OpenAPI Generator
-- Testcontainers
-
-## Quick Start
-
-### 1. Initialize for your project
-
-Run the init script to rename packages and project:
-
-```powershell
-# PowerShell
-.\init.ps1 -ProjectName "order-service" -Group "com.mycompany" -BasePackage "com.mycompany.orders"
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/catalog` | Exchanges → markets → channels → param rules (proxied from the catalog) |
+| `GET` | `/api/v1/instruments?exchangeCode&marketCode&searchText&baseAssetCode&quoteAssetCode&limit&cursor` | Instrument search; `limit` 1–200 (default 50), pass `nextCursor` back as `cursor` |
+| `GET` | `/api/v1/instruments/{instrumentId}` | One instrument; `|` in the id must be URL-encoded (`%7C`) |
+| `GET` | `/api/v1/streams` | List configured streams |
+| `POST` | `/api/v1/streams` | Create a stream: `instrumentId`, `desiredState` (`ENABLED` / `DISABLED`), `channels` |
+| `GET` | `/api/v1/streams/{streamId}` | Get a stream |
+| `PATCH` | `/api/v1/streams/{streamId}` | Update the desired spec |
+| `DELETE` | `/api/v1/streams/{streamId}` | Delete a stream |
 
 ```bash
-# Bash
-./init.sh order-service com.mycompany com.mycompany.orders
+curl -X POST http://localhost:8095/api/v1/streams -H 'Content-Type: application/json' \
+  -d '{"instrumentId":"BINANCE|SPOT|BTC|USDT","desiredState":"ENABLED","channels":[{"code":"TRADE"}]}'
 ```
 
-### 2. Start infrastructure
+Errors use one shape: `{"error", "message", "timestamp"}` (UTC). Unknown instrument → 404, unsupported
+channel or invalid param → 400, downstream down or its circuit breaker open → 503.
+
+## Downstream services
+
+| Service | Used for | Resilience4j |
+|---------|----------|--------------|
+| `market-catalog-service` (8097) | `GET /catalog`, `GET /instruments`, `GET /instruments/{id}`, `GET /markets/{exchange}/{market}/channel-capabilities` | retry `market-catalog-read`, circuit breaker `market-catalog-service` |
+| `market-data-service` (8080) | stream CRUD | retry `market-data-read`, circuit breaker `market-data-service` |
+
+Both clients are generated at build time from contract JARs (`openapi` configuration, extracted to
+`build/openapi/contracts`, generated into `build/generated`; never committed). Generated classes stay inside
+their client module; the application layer only sees the output ports.
+
+| Contract | Version |
+|----------|---------|
+| `com.trading.contracts:market-catalog-service-openapi` | `0.1.0-SNAPSHOT` |
+| `com.trading.contracts:market-data-service-openapi` | `1.0.0-SNAPSHOT` |
+
+Contracts resolve from Maven Local first, then GitHub Packages (`dimitriusd/trading-contracts`), which needs
+a PAT classic with `read:packages` in `~/.gradle/gradle.properties` (never commit it):
+
+```properties
+gpr.user=DimitriusD
+gpr.key=<PAT>
+```
+
+After a contract change in a downstream service, publish it there and refresh here:
+
+```bash
+./gradlew :infrastructure:rest-api:market-catalog-service-open-api:publishToMavenLocal   # in market-catalog-service
+./gradlew build --refresh-dependencies                                                  # here
+```
+
+To move to a new contract version, bump it in the `openapi(...)` dependency of the client module.
+
+## Run locally
+
+Whole stack from published images (Postgres + catalog + control), from `C:\Users\User\Trading`:
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Build & run
+market-data-service is not part of that stack; control calls it on the host at `http://host.docker.internal:8080`.
+
+From sources, with `market-catalog-service` and `market-data-service` running:
 
 ```bash
 ./gradlew build
 ./gradlew :infrastructure:app:bootRun
 ```
 
-### 4. Test the API
+## Publishing the contract
 
 ```bash
-# Create an item
-curl -X POST http://localhost:8080/api/v1/items \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Item", "description": "A test item"}'
-
-# List items
-curl http://localhost:8080/api/v1/items
+./gradlew :infrastructure:rest-api:trading-control-service-open-api:publishToMavenLocal   # local consumers
+./gradlew :infrastructure:rest-api:trading-control-service-open-api:publish               # GitHub Packages (gpr.user / gpr.key)
 ```
 
-## Creating a New Service
-
-1. Copy this template (or use GitHub "Use this template")
-2. Run `init.ps1` / `init.sh` with your project parameters
-3. Replace the sample `Item` domain with your actual domain model
-4. Adjust ports, services, and adapters for your use case
-5. Update `openapi.yaml` with your actual API contract
-6. Modify Flyway migrations for your schema
-7. Add/remove infrastructure adapters as needed
-
-## Project Structure
-
-```
-trading-control-service/
-├── build.gradle.kts                 # Root build: Java 21, JUnit Platform
-├── settings.gradle.kts              # Module declarations
-├── gradle/libs.versions.toml        # Centralized dependency versions
-├── docker-compose.yml               # Postgres + Kafka + Kafka UI
-├── application/
-│   ├── build.gradle.kts             # java-library, no Spring Boot
-│   └── src/main/java/.../application/
-│       ├── domain/
-│       │   ├── model/Item.java
-│       │   └── exception/
-│       ├── port/
-│       │   ├── input/ItemService.java
-│       │   └── output/ItemStoragePort.java, ItemEventPublisherPort.java
-│       └── service/ItemServiceImpl.java
-├── infrastructure/
-│   ├── app/
-│   │   ├── build.gradle.kts         # Spring Boot plugin, pulls all modules
-│   │   └── src/main/
-│   │       ├── java/.../Application.java, config/InfrastructureConfig.java
-│   │       └── resources/application.yml
-│   ├── rest-api/
-│   │   ├── build.gradle.kts         # OpenAPI Generator plugin
-│   │   └── src/main/
-│   │       ├── java/.../rest/ItemController.java, advice/, mapper/
-│   │       └── resources/openapi/openapi.yaml, schemas/
-│   ├── jdbc-storage-adapter/
-│   │   ├── build.gradle.kts
-│   │   └── src/main/
-│   │       ├── java/.../entity/, repository/, mapper/, storage/
-│   │       └── resources/db/migrations/
-│   └── event-adapter/
-│       ├── build.gradle.kts
-│       └── src/main/java/.../event/
-│           ├── EventAdapterConfig.java
-│           ├── KafkaItemEventPublisher.java
-│           └── ItemEvent.java
-├── init.ps1                          # PowerShell init script
-└── init.sh                           # Bash init script
-```
-
-## Publishing OpenAPI contract locally
-
-```bash
-./gradlew publishToMavenLocal
-```
-
-This publishes:
-
-`com.trading.contracts:trading-control-service-openapi:<version>@yaml`
-
-to Maven Local (`~/.m2/repository`).
-
-Consumer projects can use the bundled OpenAPI YAML to generate TypeScript or Java clients.
-
-To see the exact artifact path for the current version:
-
-```bash
-./gradlew printOpenApiContractArtifactPath
-```
-
-## Consuming the market-data-service contract
-
-The `infrastructure/market-data-client` module consumes the **published** `market-data-service`
-OpenAPI contract JAR from GitHub Packages and generates a Java REST client at build time.
-
-- The contract is **not** added via `implementation`. It is resolved through a dedicated, resolvable
-  `openapi` configuration:
-  ```kotlin
-  openapi("com.trading.contracts:market-data-service-openapi:0.1.0-SNAPSHOT")
-  ```
-- `extractMarketDataOpenApiContract` unpacks `openapi/openapi.yaml` (+ `openapi/schemas/**`) out of
-  the JAR, then `openApiGenerate` produces the client into `build/generated/market-data-client`
-  (git-ignored — generated sources are never committed). `compileJava` depends on generation.
-- Generated transport classes live under `com.trading.mds.client.*` and are confined to this module.
-  The application layer depends only on the `MarketDataStreamControlPort` output port; the
-  `MarketDataStreamControlAdapter` infrastructure adapter calls the generated `StreamsApi`.
-
-### GitHub Packages credentials (local)
-
-Add a **read:packages** Personal Access Token to `~/.gradle/gradle.properties` (never commit it):
-
-```properties
-gpr.user=DimitriusD
-gpr.key=<PAT_CLASSIC_WITH_READ_PACKAGES>
-```
-
-CI may instead supply `GITHUB_ACTOR`/`GITHUB_USERNAME` and `GITHUB_TOKEN` env vars.
-
-### Useful commands
-
-```bash
-# Generate the client only
-./gradlew :infrastructure:market-data-client:openApiGenerate
-
-# Full build (runs generation as part of compileJava)
-./gradlew build
-```
-
-### Updating the contract version
-
-Bump the version in the `openapi(...)` dependency in
-`infrastructure/market-data-client/build.gradle.kts` once a new contract is published.
-
-## Consuming the market-catalog-service contract
-
-The market catalog (markets, channels, instruments) lives in `market-catalog-service`; this service
-has no database. `infrastructure/market-catalog-client` generates a Java client the same way as
-`market-data-client`, from `com.trading.contracts:market-catalog-service-openapi:0.1.0-SNAPSHOT`
-(Maven Local, then GitHub Packages). `MarketCatalogAdapter` implements the `MarketCatalogPort` output
-port, used to resolve the instrument of a new stream and to validate channels/params.
-
-Refresh after a catalog contract change:
-
-```bash
-# in market-catalog-service
-./gradlew :infrastructure:rest-api:market-catalog-service-open-api:publishToMavenLocal
-# here
-./gradlew build --refresh-dependencies
-```
+`trading-ui` generates its API client from this contract.
 
 ## Container image
 
-The build pulls OpenAPI contracts from GitHub Packages, so the image needs a `read:packages` token,
-passed as a BuildKit secret (it does not end up in image layers). Contracts must be published to
-GitHub Packages (`publish`, not only `publishToMavenLocal`), since Maven Local is not visible inside Docker.
-
-```bash
-GPR_USER=DimitriusD GPR_KEY=<PAT> docker build \
-  --secret id=gpr_user,env=GPR_USER --secret id=gpr_key,env=GPR_KEY \
-  -t trading-control-service:local .
-```
-
 `.github/workflows/ci.yml` runs `./gradlew build`, then builds the image and pushes it to
-`ghcr.io/dimitriusd/trading-control-service`. It needs a repository secret `GPR_TOKEN`
-(PAT classic with `read:packages`) to resolve the contracts.
+`ghcr.io/dimitriusd/trading-control-service`:
 
 | Trigger | Tags |
 |---|---|
@@ -247,9 +111,22 @@ GPR_USER=DimitriusD GPR_KEY=<PAT> docker build \
 | tag `v1.2.3` | `1.2.3`, `1.2`, `sha-<short>` |
 | pull request | built only, not pushed |
 
+The build needs the contracts from GitHub Packages, so the repository has a `GPR_TOKEN` secret
+(PAT classic, `read:packages`). Contracts must be published with `publish`; Maven Local is not visible in
+CI or Docker. Local image build passes the token as a BuildKit secret (it does not end up in image layers):
+
+```bash
+GPR_USER=DimitriusD GPR_KEY=<PAT> docker build \
+  --secret id=gpr_user,env=GPR_USER --secret id=gpr_key,env=GPR_KEY \
+  -t trading-control-service:local .
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MARKET_DATA_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL of the remote market-data-service |
-| `MARKET_CATALOG_SERVICE_BASE_URL` | `http://localhost:8097` | Base URL of the remote market-catalog-service |
+| `APP_PORT` | `8095` | HTTP port |
+| `MARKET_CATALOG_SERVICE_BASE_URL` | `http://localhost:8097` | market-catalog-service base URL |
+| `MARKET_CATALOG_SERVICE_CONNECT_TIMEOUT` / `_READ_TIMEOUT` | `2s` / `5s` | catalog client timeouts |
+| `MARKET_DATA_SERVICE_BASE_URL` | `http://localhost:8080` | market-data-service base URL |
+| `MARKET_DATA_SERVICE_CONNECT_TIMEOUT` / `_READ_TIMEOUT` | `2s` / `5s` | market data client timeouts |

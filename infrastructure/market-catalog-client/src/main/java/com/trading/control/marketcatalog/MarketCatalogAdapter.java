@@ -1,12 +1,17 @@
 package com.trading.control.marketcatalog;
 
+import com.trading.catalog.client.api.CatalogApi;
 import com.trading.catalog.client.api.InstrumentsApi;
 import com.trading.catalog.client.api.MarketsApi;
+import com.trading.catalog.client.model.ErrorResponseDto;
 import com.trading.control.application.domain.exception.NotFoundException;
 import com.trading.control.application.domain.exception.ServiceUnavailableException;
 import com.trading.control.application.domain.exception.ValidationException;
+import com.trading.control.application.domain.model.catalog.Catalog;
 import com.trading.control.application.domain.model.catalog.ChannelCapability;
 import com.trading.control.application.domain.model.instrument.Instrument;
+import com.trading.control.application.domain.model.instrument.InstrumentPage;
+import com.trading.control.application.domain.model.instrument.InstrumentSearchQuery;
 import com.trading.control.application.port.output.MarketCatalogPort;
 import com.trading.control.marketcatalog.mapper.MarketCatalogMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -25,14 +30,36 @@ public class MarketCatalogAdapter implements MarketCatalogPort {
     static final String CIRCUIT_BREAKER = "market-catalog-service";
     static final String READ_RETRY = "market-catalog-read";
 
+    private final CatalogApi catalogApi;
     private final InstrumentsApi instrumentsApi;
     private final MarketsApi marketsApi;
     private final MarketCatalogMapper mapper;
 
-    public MarketCatalogAdapter(InstrumentsApi instrumentsApi, MarketsApi marketsApi, MarketCatalogMapper mapper) {
+    public MarketCatalogAdapter(CatalogApi catalogApi,
+                                InstrumentsApi instrumentsApi,
+                                MarketsApi marketsApi,
+                                MarketCatalogMapper mapper) {
+        this.catalogApi = catalogApi;
         this.instrumentsApi = instrumentsApi;
         this.marketsApi = marketsApi;
         this.mapper = mapper;
+    }
+
+    @Override
+    @Retry(name = READ_RETRY)
+    @CircuitBreaker(name = CIRCUIT_BREAKER)
+    public Catalog getCatalog() {
+        return call(() -> mapper.toCatalog(catalogApi.getCatalog()), "Catalog not found");
+    }
+
+    @Override
+    @Retry(name = READ_RETRY)
+    @CircuitBreaker(name = CIRCUIT_BREAKER)
+    public InstrumentPage searchInstruments(InstrumentSearchQuery query) {
+        return call(() -> mapper.toInstrumentPage(instrumentsApi.searchInstruments(
+                        query.exchangeCode(), query.marketCode(), query.searchText(),
+                        query.baseAssetCode(), query.quoteAssetCode(), query.limit(), query.cursor())),
+                "Market not found: " + query.exchangeCode() + "/" + query.marketCode());
     }
 
     @Override
@@ -73,8 +100,20 @@ public class MarketCatalogAdapter implements MarketCatalogPort {
             return new NotFoundException(notFoundMessage);
         }
         if (status.value() == 400) {
-            return new ValidationException("market-catalog-service rejected the request: " + ex.getResponseBodyAsString());
+            return new ValidationException(rejectionMessage(ex));
         }
         return new ServiceUnavailableException("market-catalog-service error: " + status);
+    }
+
+    private static String rejectionMessage(RestClientResponseException ex) {
+        try {
+            ErrorResponseDto body = ex.getResponseBodyAs(ErrorResponseDto.class);
+            if (body != null && body.getMessage() != null) {
+                return body.getMessage();
+            }
+        } catch (RuntimeException ignored) {
+            // not a catalog error body; fall back to the raw response
+        }
+        return "market-catalog-service rejected the request: " + ex.getResponseBodyAsString();
     }
 }
